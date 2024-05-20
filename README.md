@@ -1,7 +1,7 @@
 MO analysis from Gaussian SCF calculations. Need Gaussian log and fchk.\
 \
 How to use:\
-python __main__.py \<logfile\> \<fchkfile\>
+python \_\_main\_\_.py \<logfile\> \<fchkfile\>
 \
 Flags:\
 -f output file name. Default is orbitals.txt\
