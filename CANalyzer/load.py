@@ -201,19 +201,28 @@ class Load:
         mobeta = None
         if self.xhf in ['RHF', 'ROHF', 'RCAS']:
             moalpha = self.readfchk_matrix("Alpha MO coefficients", self.nbasis*self.ncomp,
-                                                self.nbsuse*self.ncomp, True, False)
+                                                self.nbsuse*self.ncomp, False, False)
         elif self.xhf == 'UHF':
-            moalpha = self.readfchk_matrix("Alpha MO coefficients", self.nbasis, self.nbsuse, True,
+            moalpha = self.readfchk_matrix("Alpha MO coefficients", self.nbasis, self.nbsuse, False,
                                                 False)
-            mobeta = self.readfchk_matrix("Beta MO coefficients", self.nbasis, self.nbsuse, True,
+            mobeta = self.readfchk_matrix("Beta MO coefficients", self.nbasis, self.nbsuse, False,
                                                False)
         else:
             moalpha = self.readfchk_matrix("Alpha MO coefficients", self.nbasis * self.ncomp,
-                                           self.nbsuse * self.ncomp, True, False)
+                                           self.nbsuse * self.ncomp, False, False)
             mobeta = moalpha[1::2, :]
             moalpha = moalpha[::2, :]
 
         return moalpha, mobeta
+
+    def read_orbitalenergy(self):
+        beta_energy = None
+        alpha_energy = self.readfchk_matrix("Alpha Orbital Energies",  self.nbsuse*self.ncomp, 1,
+                                            False, False)
+        if self.xhf == 'UHF':
+            beta_energy = self.readfchk_matrix("Beta Orbital Energies",  self.nbsuse * self.ncomp, 1,
+                                                False, False)
+        return alpha_energy, beta_energy
 
     def readlog_matrix(self, startstr, nrows, ncol, ifltt=False, ifantisymm=False):
         startline = int(str(subprocess.check_output(f"grep -n '{startstr}' {self.logfile}", shell=True)).split(" ")

@@ -15,6 +15,8 @@ class MO(Load):
         self.sorted_alphapop = None
         self.sorted_betapop = None
         self.reduced_groups = None
+        self.alpha_orbital_energy = None
+        self.beta_orbital_energy = None
 
     def mulliken_analysis(self):
         self.overlap = self.read_overlap()
@@ -76,20 +78,30 @@ class MO(Load):
         return group
 
     def print_mulliken(self):
+        self.alpha_orbital_energy, self.beta_orbital_energy = self.read_orbitalenergy()
         if self.xhf in ['GHF', 'GCAS']:
-            results_alpha = dict(zip(self.reduced_groups, (self.sorted_alphapop + self.sorted_betapop).round(3)))
+            results_alpha = dict(zip([('Orbital Energy', '(Hartree)')] + self.reduced_groups,
+                                     np.append(self.alpha_orbital_energy.round(5),
+                                               (self.sorted_alphapop + self.sorted_betapop).round(3), axis=0)))
             remark_alpha = f"\n{self.xhf} Orbitals\n"
             alpha_spin = [np.sum(self.alpha_pop[:,i]) for i in range(self.nbsuse*self.ncomp)]
             beta_spin = [np.sum(self.beta_pop[:, i]) for i in range(self.nbsuse*self.ncomp)]
-            self.spin = dict(zip(['Alpha', 'Beta'], [alpha_spin, beta_spin]))
+            self.spin = dict(zip(['Orbital Energy (Hartree)', 'Alpha', 'Beta'], [self.alpha_orbital_energy, alpha_spin, beta_spin]))
         elif self.xhf in ['RHF', 'ROHF', 'RCAS']:
-            results_alpha = dict(zip(self.reduced_groups, self.sorted_alphapop.round(3)))
+            results_alpha = dict(zip([('Orbital Energy', '(Hartree)')] + self.reduced_groups,
+                                     np.append(self.alpha_orbital_energy.round(5),self.sorted_alphapop.round(3), axis=0)))
             remark_alpha = f"\n{self.xhf} Orbitals\n"
         else:
-            results_alpha = dict(zip(self.reduced_groups, self.sorted_alphapop.round(3)))
+            results_alpha = dict(zip([('Orbital Energy', '(Hartree)')] + self.reduced_groups,
+                                     np.append(self.alpha_orbital_energy.round(5),self.sorted_alphapop.round(3), axis=0)))
             remark_alpha = f"\n{self.xhf} Alpha Orbitals\n"
-            results_beta = dict(zip(self.reduced_groups, self.sorted_betapop.round(3)))
+            results_beta = dict(zip([('Orbital Energy', '(Hartree)')] + self.reduced_groups,
+                                    np.append(self.beta_orbital_energy.round(5),self.sorted_betapop.round(3), axis=0)))
             remark_beta = f"\n{self.xhf} Beta Orbitals\n"
+
+        #print(np.append(self.alpha_orbital_energy.round(5),(self.sorted_alphapop + self.sorted_betapop).round(3), axis=0))
+        #print((self.sorted_alphapop + self.sorted_betapop).round(3).shape)
+        #print(self.alpha_orbital_energy.shape)
 
         with open(self.filename, 'w') as sys.stdout, pd.option_context('display.max_rows', None, 'display.max_columns', None):
             print(f'Number of Alpha Electrons: {self.nae}   Beta Electrons: {self.nbe}')
