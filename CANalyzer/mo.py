@@ -84,9 +84,12 @@ class MO(Load):
                                      np.append(self.alpha_orbital_energy.round(5),
                                                (self.sorted_alphapop + self.sorted_betapop).round(3), axis=0)))
             remark_alpha = f"\n{self.xhf} Orbitals\n"
+            self.alpha_pop = self.alpha_pop.round(3)
+            self.beta_pop = self.beta_pop.round(3)
             alpha_spin = [np.sum(self.alpha_pop[:,i]) for i in range(self.nbsuse*self.ncomp)]
             beta_spin = [np.sum(self.beta_pop[:, i]) for i in range(self.nbsuse*self.ncomp)]
-            self.spin = dict(zip(['Orbital Energy (Hartree)', 'Alpha', 'Beta'], [self.alpha_orbital_energy, alpha_spin, beta_spin]))
+            self.spin = dict(zip(['Orbital Energy (Hartree)', 'Alpha', 'Beta'],
+                                 [self.alpha_orbital_energy.flatten().round(5), alpha_spin, beta_spin]))
         elif self.xhf in ['RHF', 'ROHF', 'RCAS']:
             results_alpha = dict(zip([('Orbital Energy', '(Hartree)')] + self.reduced_groups,
                                      np.append(self.alpha_orbital_energy.round(5),self.sorted_alphapop.round(3), axis=0)))
