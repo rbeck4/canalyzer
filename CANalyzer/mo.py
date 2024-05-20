@@ -99,10 +99,6 @@ class MO(Load):
                                     np.append(self.beta_orbital_energy.round(5),self.sorted_betapop.round(3), axis=0)))
             remark_beta = f"\n{self.xhf} Beta Orbitals\n"
 
-        #print(np.append(self.alpha_orbital_energy.round(5),(self.sorted_alphapop + self.sorted_betapop).round(3), axis=0))
-        #print((self.sorted_alphapop + self.sorted_betapop).round(3).shape)
-        #print(self.alpha_orbital_energy.shape)
-
         with open(self.filename, 'w') as sys.stdout, pd.option_context('display.max_rows', None, 'display.max_columns', None):
             print(f'Number of Alpha Electrons: {self.nae}   Beta Electrons: {self.nbe}')
             print(f'Number of AOs: {self.nbasis*self.ncomp}    MOs: {self.nbsuse*self.ncomp}')
