@@ -218,10 +218,10 @@ class Load:
     def read_orbitalenergy(self):
         beta_energy = None
         alpha_energy = self.readfchk_matrix("Alpha Orbital Energies",  self.nbsuse*self.ncomp, 1,
-                                            False, False)
+                                            False, False, True)
         if self.xhf == 'UHF':
             beta_energy = self.readfchk_matrix("Beta Orbital Energies",  self.nbsuse * self.ncomp, 1,
-                                                False, False)
+                                                False, False, True)
         return alpha_energy, beta_energy
 
     def readlog_matrix(self, startstr, nrows, ncol, ifltt=False, ifantisymm=False):
@@ -229,9 +229,7 @@ class Load:
                         [0].split("'")[1].split(":")[0]) + 2
         matrix = np.zeros((nrows, ncol))
         if ifltt:
-            ltt_matrix = [[] for x in range(nrows)]
             blocks = int(np.ceil(ncol / 5))
-            combined_blocks = [[] for b in range(blocks)]
             col_offset = 0
             for b in range(blocks):
                 for line in range(nrows):
@@ -272,11 +270,13 @@ class Load:
 
         return matrix
 
-    def readfchk_matrix(self, startstr, nrows, ncol, ifltt=False, ifantisymm=False):
+    def readfchk_matrix(self, startstr, nrows, ncol, ifltt=False, ifantisymm=False, realonly=False):
         startline = int(str(subprocess.check_output(f"grep -n '{startstr}' {self.fchkfile}", shell=True)).split(" ")[
             0].split("'")[1].split(":")[0]) + 1
         rawmatrix = []
-        matrixsize = nrows*ncol*self.nri
+        matrixsize = nrows * ncol
+        if self.nri == 2 and not realonly:
+            matrixsize = matrixsize * self.nri
         num_lines = int(np.ceil(matrixsize / 5))
         for i in range(num_lines):
             matrixline = linecache.getline(self.fchkfile, startline).split(" ")
@@ -291,15 +291,14 @@ class Load:
             startline += 1
 
         rawmatrix = np.array(rawmatrix)
-        if self.nri == 1:
-            matrix = rawmatrix.reshape((nrows, ncol)).T
-        else:
+        if self.nri == 2 and not realonly:
             real_matrix = rawmatrix[::2].reshape((nrows, ncol)).T
             imag_matrix = rawmatrix[1::2].reshape((nrows, ncol)).T
             matrix = real_matrix + 1j * imag_matrix
+        else:
+            matrix = rawmatrix.reshape((nrows, ncol)).T
 
         return matrix
-
 
     def overlay_route(self, overlay):
         line1 = str(subprocess.check_output("grep ' 3/' " + self.logfile, shell=True)).split(" ")[-1].split(",")
