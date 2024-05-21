@@ -81,6 +81,9 @@ class Load:
             str(subprocess.check_output("grep 'Highest angular momentum' " + self.fchkfile, shell=True)).split(
                 " ")[-1].split("\\")[0])
 
+        if not self.displaywidth:
+            self.displaywidth = 100000
+
     def parse_log(self):
         # what kind of HF/KS
         overlay3 = self.overlay_route(3)

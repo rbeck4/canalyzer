@@ -78,8 +78,6 @@ class MO(Load):
         return group
 
     def print_mulliken(self):
-        if not self.displaywidth:
-            self.displaywidth = len(self.reduced_groups) + 2
         self.alpha_orbital_energy, self.beta_orbital_energy = self.read_orbitalenergy()
         if self.xhf in ['GHF', 'GCAS']:
             results_alpha = dict(zip([('Orbital Energy', '(Hartree)')] + self.reduced_groups,
