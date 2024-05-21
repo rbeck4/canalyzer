@@ -106,14 +106,17 @@ class MO(Load):
             print(f'Number of Alpha Electrons: {self.nae}   Beta Electrons: {self.nbe}')
             print(f'Number of AOs: {self.nbasis*self.ncomp}    MOs: {self.nbsuse*self.ncomp}')
             results_alpha_df = pd.DataFrame(results_alpha)
+            results_alpha_df.index += 1
             print(remark_alpha)
             print(results_alpha_df)
             if self.xhf in ['UHF']:
                 results_beta_df = pd.DataFrame(results_beta)
+                results_beta_df.index += 1
                 print(remark_beta)
                 print(results_beta_df)
             elif self.xhf in ['GHF', 'GCAS']:
                 spin_df = pd.DataFrame(self.spin)
+                spin_df.index += 1
                 print('\nSpin Contribution\n')
                 print(spin_df)
 
