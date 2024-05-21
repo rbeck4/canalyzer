@@ -5,7 +5,7 @@ import CANalyzer.utilities as util
 import ast
 
 class Load:
-    def __init__(self, logfile, fchkfile, filename, groups):
+    def __init__(self, logfile, fchkfile, filename, groups, displaywidth):
         self.logfile = logfile
         self.fchkfile = fchkfile
         self.filename = filename
@@ -26,6 +26,7 @@ class Load:
         self.ncomp = 1
         self.nri = 1
         self.thresh = 1e-10
+        self.displaywidth = displaywidth
 
     def parse_constants(self):
         # setting filename default to orbitals.txt

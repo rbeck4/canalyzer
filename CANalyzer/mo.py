@@ -5,8 +5,8 @@ import CANalyzer.utilities as util
 import sys
 
 class MO(Load):
-    def __init__(self, logfile, fchkfile, filename, groups):
-        Load.__init__(self, logfile, fchkfile, filename, groups)
+    def __init__(self, logfile, fchkfile, filename, groups, displaywidth):
+        Load.__init__(self, logfile, fchkfile, filename, groups, displaywidth)
         self.moalpha = None
         self.mobeta = None
         self.overlap = None
@@ -78,6 +78,8 @@ class MO(Load):
         return group
 
     def print_mulliken(self):
+        if not self.displaywidth:
+            self.displaywidth = len(self.reduced_groups) + 2
         self.alpha_orbital_energy, self.beta_orbital_energy = self.read_orbitalenergy()
         if self.xhf in ['GHF', 'GCAS']:
             results_alpha = dict(zip([('Orbital Energy', '(Hartree)')] + self.reduced_groups,
