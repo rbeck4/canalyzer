@@ -107,7 +107,7 @@ class MO(Load):
         with open(self.filename, 'w') as sys.stdout, pd.option_context('display.max_rows', None, 'display.max_columns', None):
             print(f'Number of Alpha Electrons: {self.nae}   Beta Electrons: {self.nbe}')
             print(f'Number of AOs: {self.nbasis*self.ncomp}    MOs: {self.nbsuse*self.ncomp}')
-            pd.set_option('display.width', 10000)
+            pd.set_option('display.width', self.displaywidth)
             results_alpha_df = pd.DataFrame(results_alpha)
             results_alpha_df.index += 1
             print(remark_alpha)
