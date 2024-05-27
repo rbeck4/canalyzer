@@ -131,7 +131,7 @@ class Load:
                 if self.xhf == 'GHF' and self.ri == 'Real':
                     raise Exception("Real GHF NYI")
 
-        if self.xhf == 'GHF':
+        if self.xhf in ['GHF', 'GCAS']:
             self.ncomp = 2
         else:
             self.ncomp = 1
@@ -198,7 +198,7 @@ class Load:
                 self.subshell.append((i, self.atoms[i], j))
 
     def read_overlap(self):
-        return self.readlog_matrix("\*\*\* Overlap \*\*\*", self.nbasis, self.nbasis, True,False)
+        return self.readlog_matrix(r"\*\*\* Overlap \*\*\*", self.nbasis, self.nbasis, True,False)
 
     def read_mo(self):
         moalpha = None
