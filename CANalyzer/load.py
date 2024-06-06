@@ -106,11 +106,11 @@ class Load:
                 self.xhf = "GHF"
                 self.ri = "Complex"
             elif iop116 == 101:
-                while self.xhf != "ROHF" or self.xhf != "RCAS":
+                while self.xhf not in ["ROHF", "RCAS"]:
                     self.xhf = input("Is this ROHF or RCAS?\n")
                 self.ri = "Real"
             elif iop116 == 103:
-                while self.xhf != "ROHF" or self.xhf != "RCAS":
+                while self.xhf not in ["ROHF", "RCAS"]:
                     self.xhf = input("Is this ROHF or RCAS?\n")
                 self.ri = "Complex"
             elif iop116 == 107:
