@@ -5,7 +5,7 @@ import CANalyzer.utilities as util
 import ast
 
 class Load:
-    def __init__(self, logfile, fchkfile, filename, groups):
+    def __init__(self, logfile, fchkfile, filename, groups, displaywidth):
         self.logfile = logfile
         self.fchkfile = fchkfile
         self.filename = filename
@@ -26,6 +26,7 @@ class Load:
         self.ncomp = 1
         self.nri = 1
         self.thresh = 1e-10
+        self.displaywidth = displaywidth
 
     def parse_constants(self):
         # setting filename default to orbitals.txt
@@ -80,6 +81,9 @@ class Load:
             str(subprocess.check_output("grep 'Highest angular momentum' " + self.fchkfile, shell=True)).split(
                 " ")[-1].split("\\")[0])
 
+        if not self.displaywidth:
+            self.displaywidth = 100000
+
     def parse_log(self):
         # what kind of HF/KS
         overlay3 = self.overlay_route(3)
@@ -127,7 +131,7 @@ class Load:
                 if self.xhf == 'GHF' and self.ri == 'Real':
                     raise Exception("Real GHF NYI")
 
-        if self.xhf == 'GHF':
+        if self.xhf in ['GHF', 'GCAS']:
             self.ncomp = 2
         else:
             self.ncomp = 1
@@ -194,7 +198,7 @@ class Load:
                 self.subshell.append((i, self.atoms[i], j))
 
     def read_overlap(self):
-        return self.readlog_matrix("\*\*\* Overlap \*\*\*", self.nbasis, self.nbasis, True,False)
+        return self.readlog_matrix(r"\*\*\* Overlap \*\*\*", self.nbasis, self.nbasis, True,False)
 
     def read_mo(self):
         moalpha = None
