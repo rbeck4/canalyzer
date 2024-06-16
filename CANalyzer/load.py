@@ -29,10 +29,6 @@ class Load:
         self.displaywidth = displaywidth
 
     def parse_constants(self):
-        # setting filename default to orbitals.txt
-        if not self.filename:
-            self.filename = 'orbitals.txt'
-
         # getting atoms
         self.natoms = int(
             str(subprocess.check_output("grep 'Atomic numbers ' " + self.fchkfile, shell=True)).split(" ")[
@@ -81,8 +77,6 @@ class Load:
             str(subprocess.check_output("grep 'Highest angular momentum' " + self.fchkfile, shell=True)).split(
                 " ")[-1].split("\\")[0])
 
-        if not self.displaywidth:
-            self.displaywidth = 100000
 
     def parse_log(self):
         # what kind of HF/KS
