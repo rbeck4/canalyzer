@@ -208,6 +208,7 @@ class Load:
         else:
             moalpha = self.readfchk_matrix("Alpha MO coefficients", self.nbasis * self.ncomp,
                                            self.nbsuse * self.ncomp, False, False)
+            print('unsplit: ', moalpha.shape)
             mobeta = moalpha[1::2, :]
             moalpha = moalpha[::2, :]
 
@@ -290,11 +291,11 @@ class Load:
 
         rawmatrix = np.array(rawmatrix)
         if self.nri == 2 and not realonly:
-            real_matrix = rawmatrix[::2].reshape((nrows, ncol)).T
-            imag_matrix = rawmatrix[1::2].reshape((nrows, ncol)).T
+            real_matrix = rawmatrix[::2].reshape((ncol, nrows)).T
+            imag_matrix = rawmatrix[1::2].reshape((ncol, nrows)).T
             matrix = real_matrix + 1j * imag_matrix
         else:
-            matrix = rawmatrix.reshape((nrows, ncol)).T
+            matrix = rawmatrix.reshape((ncol, nrows)).T
 
         return matrix
 
