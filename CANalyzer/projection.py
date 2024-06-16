@@ -19,7 +19,7 @@ class Projection():
 
     def project(self):
         self.ctsc = np.real(np.conj(self.mo1a.T) @ self.overlap @ self.mo2a)
-        if self.mo1b and self.mo2b:
+        if self.fchk1.xhf[0] == self.fchk2.xhf[0]:
             ctscb = np.real(np.conj(self.mo1b.T) @ self.overlap @ self.mo2b)
             self.ctsc += ctscb
 
@@ -30,7 +30,7 @@ class Projection():
             nmo1, nmo2 = self.ctsc.shape
             for i in range(nmo1):
                 for j in range(nmo2):
-                    contrib = self.ctsc[j, i]
+                    contrib = self.ctsc[j, i].round(5)
                     if np.abs(contrib) > 0.01:
                         print(f"Contribution of fchk1 MO {i+1} from fchk2 MO {i+1}: {contrib}\n")
 

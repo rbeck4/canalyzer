@@ -208,7 +208,6 @@ class Load:
         else:
             moalpha = self.readfchk_matrix("Alpha MO coefficients", self.nbasis * self.ncomp,
                                            self.nbsuse * self.ncomp, False, False)
-            print('unsplit: ', moalpha.shape)
             mobeta = moalpha[1::2, :]
             moalpha = moalpha[::2, :]
 
