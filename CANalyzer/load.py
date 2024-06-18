@@ -194,7 +194,7 @@ class Load:
     def read_overlap(self):
         return self.readlog_matrix(r"\*\*\* Overlap \*\*\*", self.nbasis, self.nbasis, True,False)
 
-    def read_mo(self):
+    def read_mo(self, separate=True):
         moalpha = None
         mobeta = None
         if self.xhf in ['RHF', 'ROHF', 'RCAS']:
@@ -208,8 +208,9 @@ class Load:
         else:
             moalpha = self.readfchk_matrix("Alpha MO coefficients", self.nbasis * self.ncomp,
                                            self.nbsuse * self.ncomp, False, False)
-            mobeta = moalpha[1::2, :]
-            moalpha = moalpha[::2, :]
+            if separate:
+                mobeta = moalpha[1::2, :]
+                moalpha = moalpha[::2, :]
 
         return moalpha, mobeta
 
@@ -222,49 +223,74 @@ class Load:
                                                 False, False, True)
         return alpha_energy, beta_energy
 
-    def readlog_matrix(self, startstr, nrows, ncol, ifltt=False, ifantisymm=False):
-        startline = int(str(subprocess.check_output(f"grep -n '{startstr}' {self.logfile}", shell=True)).split(" ")
+    def readlog_matrix(self, startstr, nrows, ncol, ifltt=False, ifantisymm=False, instance=1):
+        # for files with multiple matrices with the same startstr, this pick which instance to read
+        if instance == 1:
+            startline = int(str(subprocess.check_output(f"grep -n '{startstr}' {self.logfile}", shell=True)).split(" ")
                         [0].split("'")[1].split(":")[0]) + 2
-        matrix = np.zeros((nrows, ncol))
-        if ifltt:
-            blocks = int(np.ceil(ncol / 5))
-            col_offset = 0
-            for b in range(blocks):
-                for line in range(nrows):
-                    linear2= []
-                    matrixline = linecache.getline(self.logfile, startline)
-                    if 'D' in matrixline:
-                        matrixline = matrixline.replace("D", "e")
-                    if 'd' in matrixline:
-                        matrixline = matrixline.replace('d', 'e')
+        elif instance > 1:
+            grep_results = str(
+                subprocess.check_output(f"grep -n '{startstr}' {self.logfile}", shell=True)).split("\\n")
+            linenumbers = []
+            for line in grep_results:
+                words = line.split(':')
+                try:
+                    linenumbers.append(int(words[0]))
+                except:
+                    pass
+            startline = linenumbers[instance-2] + 2
 
-                    matrixlist = matrixline.split(" ")
-                    for x in matrixlist:
-                        try:
-                            xx = float(x)
-                            if abs(xx) < self.thresh:
-                                xx = 0.0
-                            linear2.append(xx)
-                        except:
-                            pass
+        else:
+            raise Exception('Instance must be greater than 0')
+
+        # initialize matrix
+        matrix = np.zeros((nrows, ncol))
+
+        # reading matrix
+        #if ifltt:
+        blocks = int(np.ceil(ncol / 5))
+        col_offset = 0
+        for b in range(blocks):
+            for line in range(nrows):
+                linear2= []
+                matrixline = linecache.getline(self.logfile, startline)
+                if 'D' in matrixline:
+                    matrixline = matrixline.replace("D", "e")
+                if 'd' in matrixline:
+                    matrixline = matrixline.replace('d', 'e')
+
+                matrixlist = matrixline.split()
+                for x in matrixlist:
+                    try:
+                        xx = float(x)
+                        if abs(xx) < self.thresh:
+                            xx = 0.0
+                        linear2.append(xx)
+                    except:
+                        pass
+
+                try:
                     dump = linear2.pop(0)
                     dump = int(dump - 1)
-                    startline += 1
+                except:
+                    pass
 
-                    for x in range(len(linear2)):
-                        matrix[dump, x + col_offset] = linear2[x]
-
-                nrows -= 5
-                col_offset += 5
                 startline += 1
 
+                for x in range(len(linear2)):
+                    matrix[dump, x + col_offset] = linear2[x]
+            if ifltt:
+                nrows -= 5
+            col_offset += 5
+            startline += 1
+
+        if ifltt:
             if ifantisymm:
                 matrix = np.tril(matrix, -1).T - matrix
             elif not ifantisymm:
                 matrix = np.tril(matrix, -1).T + matrix
-
-        elif not ifltt:
-            raise Exception("Reading square matrices from log file NYI")
+        else:
+            matrix = matrix.reshape((nrows, ncol))
 
         return matrix
 

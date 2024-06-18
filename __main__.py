@@ -2,18 +2,20 @@ from argparse import ArgumentParser, Namespace
 import os
 import CANalyzer.mo
 import CANalyzer.projection
+import CANalyzer.natorb
 
 parser = ArgumentParser()
 parser.add_argument('jobtype', help='Type of job to perform', type=str)
 """
     jobtype: MOAnalyzer - provides AO contribution to MOs partitioned by angular momentum and atom (groups of atoms)
              Projection - Provides projection.py of MOs in fchk onto MOs in fchk2
+             NatOrb - Computes natural orbitals and stores it into a new fchk 
 """
 parser.add_argument('logfile', help='Full directory path to log file', type=str)
 parser.add_argument('fchk', help='Full directory path to fchk file', type=str)
 parser.add_argument('-f', '--filename', help='Custom filename to save created files', type=str)
 parser.add_argument('--fchk2', help='Full directory path to fchk file', type=str)
-parser.add_argument("--groups", help='Dictionary of custom atom groupings', type=str)
+parser.add_argument("--groups", help='Dictionary of custom atom groupings or range of states for NatOrb', type=str)
 parser.add_argument("--displaywidth", help='Display width of output file before skipping line', type=int)
 args: Namespace = parser.parse_args()
 
@@ -43,6 +45,12 @@ elif args.jobtype == 'Projection':
     Projection.start()
     Projection.project()
     Projection.print_project()
+elif args.jobtype == 'NatOrb':
+    if not args.filename:
+        filename += 'natorb.txt'
+    NatOrb = CANalyzer.natorb.NaturalOrbitals(args.logfile, args.fchk, filename, args.groups, displaywidth)
+    NatOrb.start()
+    NatOrb.compute_natorb()
 else:
     print("Invalid jobtype")
 

@@ -13,6 +13,42 @@ def onlytype(l, type):
             pass
     return new_l
 
+
+def write_fchk(startstr, nri, matrix, matsize, oldfchk, fchk):
+    import numpy as np
+    import os
+    import subprocess
+
+    startline = int(str(subprocess.check_output(f"grep -n '{startstr}' {oldfchk}", shell=True)).split(" ")[
+                        0].split("'")[1].split(":")[0])
+
+    os.system(f"sed -n '1,{startline}p' {oldfchk} >> {fchk}")
+
+    totalsize = matsize * nri
+    if nri == 1:
+        flat = matrix.flatten(order='F')
+    if nri == 2:
+        flatreal = np.real(matrix).flatten(order='F')
+        flatimag = np.imag(matrix).flatten(order='F')
+        flat = np.zeros(totalsize)
+        flat[::2] = flatreal
+        flat[1::2] = flatimag
+    rows = int(np.ceil(totalsize / 5))
+    remainder = totalsize % 5
+    for i in range(rows):
+        if i == rows - 1 and remainder != 0:
+            line = flat[-remainder:]
+        else:
+            line = flat[5*i:5*i+5]
+        strline = ["  {:.8E}".format(x) if x >= 0 else " {:.8E}".format(x) for x in line]
+        finalstring = "".join(strline)
+        with open(fchk, "a", newline='') as file:
+            file.write(f"{finalstring}\n")
+
+    startline2 = startline + rows + 1
+    os.system(f"tail -n +{startline2} {oldfchk} >> {fchk}")
+
+
 OAM = {
     "S": 0,
     "P": 1,
