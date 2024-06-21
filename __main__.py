@@ -1,28 +1,58 @@
 from argparse import ArgumentParser, Namespace
 import os
-from pathlib import Path
 import CANalyzer.mo
+import CANalyzer.projection
+import CANalyzer.natorb
 
 parser = ArgumentParser()
-
-parser.add_argument('filepath', help='Full directory path to log file', type=str)
+parser.add_argument('jobtype', help='Type of job to perform', type=str)
+"""
+    jobtype: MOAnalyzer - provides AO contribution to MOs partitioned by angular momentum and atom (groups of atoms)
+             Projection - Provides projection.py of MOs in fchk onto MOs in fchk2
+             NatOrb - Computes natural orbitals and stores it into a new fchk 
+"""
+parser.add_argument('logfile', help='Full directory path to log file', type=str)
 parser.add_argument('fchk', help='Full directory path to fchk file', type=str)
 parser.add_argument('-f', '--filename', help='Custom filename to save created files', type=str)
-parser.add_argument("--groups", help='Dictionary of custom atom groupings', type=str)
+parser.add_argument('--fchk2', help='Full directory path to fchk file', type=str)
+parser.add_argument("--groups", help='Dictionary of custom atom groupings or range of states for NatOrb', type=str)
 parser.add_argument("--displaywidth", help='Display width of output file before skipping line', type=int)
 args: Namespace = parser.parse_args()
 
+# setting defaults
 directory = os.getcwd()
 filename = directory + "/"
 if args.filename:
     filename += args.filename
-else:
-    filename += Path(args.filepath).stem
 
-Analyze = CANalyzer.mo.MO(args.filepath, args.fchk, args.filename, args.groups, args.displaywidth)
-Analyze.start()
-Analyze.mulliken_analysis()
-Analyze.print_mulliken()
+if args.displaywidth:
+    displaywidth = args.displaywidth
+else:
+    displaywidth = 100000
+
+# running jobs
+if args.jobtype == "MOAnalyzer":
+    if not args.filename:
+        filename += 'orbitals.txt'
+    MOAnalyzer = CANalyzer.mo.MO(args.logfile, args.fchk, filename, args.groups, displaywidth)
+    MOAnalyzer.start()
+    MOAnalyzer.mulliken_analysis()
+    MOAnalyzer.print_mulliken()
+elif args.jobtype == 'Projection':
+    if not args.filename:
+        filename += 'projections.txt'
+    Projection = CANalyzer.projection.Projection(args.logfile, args.fchk, args.fchk2, filename, displaywidth)
+    Projection.start()
+    Projection.project()
+    Projection.print_project()
+elif args.jobtype == 'NatOrb':
+    if not args.filename:
+        filename += 'natorb.txt'
+    NatOrb = CANalyzer.natorb.NaturalOrbitals(args.logfile, args.fchk, filename, args.groups, displaywidth)
+    NatOrb.start()
+    NatOrb.compute_natorb()
+else:
+    print("Invalid jobtype")
 
 
 

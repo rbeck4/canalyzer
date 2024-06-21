@@ -81,7 +81,7 @@ class MO(Load):
         self.alpha_orbital_energy, self.beta_orbital_energy = self.read_orbitalenergy()
         if self.xhf in ['GHF', 'GCAS']:
             results_alpha = dict(zip([('Orbital Energy', '(Hartree)')] + self.reduced_groups,
-                                     np.append(self.alpha_orbital_energy.round(5),
+                                     np.append(self.alpha_orbital_energy.round(5).T,
                                                (self.sorted_alphapop + self.sorted_betapop).round(3), axis=0)))
             remark_alpha = f"\n{self.xhf} Orbitals\n"
             self.alpha_pop = self.alpha_pop.round(3)
@@ -92,14 +92,14 @@ class MO(Load):
                                  [self.alpha_orbital_energy.flatten().round(5), alpha_spin, beta_spin]))
         elif self.xhf in ['RHF', 'ROHF', 'RCAS']:
             results_alpha = dict(zip([('Orbital Energy', '(Hartree)')] + self.reduced_groups,
-                                     np.append(self.alpha_orbital_energy.round(5),self.sorted_alphapop.round(3), axis=0)))
+                                     np.append(self.alpha_orbital_energy.round(5).T,self.sorted_alphapop.round(3), axis=0)))
             remark_alpha = f"\n{self.xhf} Orbitals\n"
         else:
             results_alpha = dict(zip([('Orbital Energy', '(Hartree)')] + self.reduced_groups,
-                                     np.append(self.alpha_orbital_energy.round(5),self.sorted_alphapop.round(3), axis=0)))
+                                     np.append(self.alpha_orbital_energy.round(5).T,self.sorted_alphapop.round(3), axis=0)))
             remark_alpha = f"\n{self.xhf} Alpha Orbitals\n"
             results_beta = dict(zip([('Orbital Energy', '(Hartree)')] + self.reduced_groups,
-                                    np.append(self.beta_orbital_energy.round(5),self.sorted_betapop.round(3), axis=0)))
+                                    np.append(self.beta_orbital_energy.round(5).T,self.sorted_betapop.round(3), axis=0)))
             remark_beta = f"\n{self.xhf} Beta Orbitals\n"
 
         with open(self.filename, 'w') as sys.stdout, pd.option_context('display.max_rows', None, 'display.max_columns', None):
