@@ -58,12 +58,15 @@ class NaturalOrbitals(Load):
             real_pdm = self.readlog_matrix("1PDM Matrix (real):", self.naorb, self.naorb, instance=istate)
             imag_pdm = self.readlog_matrix("1PDM Matrix (imag):", self.naorb, self.naorb, instance=istate)
             pdm = real_pdm + 1j*imag_pdm
-            noon, no_tranform = npl.eig(pdm)
+            noon, no_transform = npl.eig(pdm)
 
             acMO = self.MO[:, self.niorb:self.niorb+self.naorb]
-            acnatorb = acMO @ no_tranform
+            acnatorb = acMO @ no_transform
             natorb = np.copy(self.MO)
             natorb[:, self.niorb:self.niorb+self.naorb] = acnatorb
+
+            no_transform_abs = np.abs(no_transform)
+            np.savetxt(f'natorb-state{istate}-ascontrib.csv', no_transform_abs, delimiter=",")
 
             newfchk = f"natorb-state{istate}.fchk"
             matsize = self.nbasis * self.nbsuse * self.ncomp * self.ncomp
