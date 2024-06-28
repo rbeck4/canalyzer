@@ -67,7 +67,7 @@ class MO(Load):
                         self.sorted_betapop[index, j] += self.beta_pop[i, j]
 
     def identify_group(self, atom_number):
-        for name in self.groupnames[:-1]:
+        for name in self.groupnames:
             grouprange = self.groups[name]
             for r in grouprange:
                 start = r[0]
@@ -75,8 +75,6 @@ class MO(Load):
                 if atom_number in range(start, end):
                     group = name
                     break
-                else:
-                    group = 'Other'
         return group
 
     def print_mulliken(self):

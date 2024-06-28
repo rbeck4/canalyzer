@@ -54,8 +54,6 @@ class Load:
                 rawrange = ast.literal_eval(f"[{rawrange}]")
                 grouprange.append(rawrange)
             self.groups = dict(zip(self.groupnames, grouprange))
-            self.groupnames = list(self.groupnames)
-            self.groupnames.append('Other')
 
         # getting parameters
         self.nae = int(
