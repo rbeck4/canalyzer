@@ -298,6 +298,7 @@ class Load:
 
         return matrix
 
+
     def readfchk_matrix(self, startstr, nrows, ncol, ifltt=False, ifantisymm=False, realonly=False):
         startline = int(str(subprocess.check_output(f"grep -n '{startstr}' {self.fchkfile}", shell=True)).split(" ")[
             0].split("'")[1].split(":")[0]) + 1
