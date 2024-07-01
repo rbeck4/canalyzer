@@ -1,11 +1,11 @@
 import os
 import numpy as np
-import numpy.linalg as npl
+#import numpy.linalg as npl
 import subprocess
 import sys
 import pandas as pd
 from CANalyzer.load import Load
-from CANalyzer.utilities import write_fchk
+from CANalyzer.utilities import write_fchk, eig
 
 class NaturalOrbitals(Load):
     def __init__(self, logfile, fchkfile, filename, states, displaywidth):
@@ -58,7 +58,7 @@ class NaturalOrbitals(Load):
             real_pdm = self.readlog_matrix("1PDM Matrix (real):", self.naorb, self.naorb, instance=istate)
             imag_pdm = self.readlog_matrix("1PDM Matrix (imag):", self.naorb, self.naorb, instance=istate)
             pdm = real_pdm + 1j*imag_pdm
-            noon, no_transform = npl.eig(pdm)
+            noon, no_transform = eig(pdm)
 
             acMO = self.MO[:, self.niorb:self.niorb+self.naorb]
             acnatorb = acMO @ no_transform
@@ -76,7 +76,8 @@ class NaturalOrbitals(Load):
                                                                            'display.max_columns', None):
                 print(f"Natural Orbital Occupation Numbers for State {istate}")
                 for i in range(len(noon)):
-                    print(f'Natural Orbital {i}: {np.real(noon[i])}')
+                    nn = round(np.real(noon[i]), 6)
+                    print(f'Natural Orbital {i}: {nn}')
                 print(" ")
 
 
