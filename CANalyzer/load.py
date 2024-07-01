@@ -216,6 +216,7 @@ class Load:
 
         return moalpha, mobeta
 
+
     def read_orbitalenergy(self):
         beta_energy = None
         alpha_energy = self.readfchk_matrix("Alpha Orbital Energies",  self.nbsuse*self.ncomp, 1,
