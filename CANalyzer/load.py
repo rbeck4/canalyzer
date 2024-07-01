@@ -226,6 +226,7 @@ class Load:
                                                 False, False, True)
         return alpha_energy, beta_energy
 
+
     def readlog_matrix(self, startstr, nrows, ncol, ifltt=False, ifantisymm=False, instance=1):
         # for files with multiple matrices with the same startstr, this pick which instance to read
         if instance == 1:
