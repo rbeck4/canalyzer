@@ -28,6 +28,7 @@ class Load:
         self.thresh = 1e-10
         self.displaywidth = displaywidth
 
+
     def parse_constants(self):
         # getting atoms
         self.natoms = int(
