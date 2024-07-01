@@ -28,6 +28,7 @@ class Load:
         self.thresh = 1e-10
         self.displaywidth = displaywidth
 
+
     def parse_constants(self):
         # getting atoms
         self.natoms = int(
@@ -194,6 +195,7 @@ class Load:
     def read_overlap(self):
         return self.readlog_matrix(r"\*\*\* Overlap \*\*\*", self.nbasis, self.nbasis, True,False)
 
+
     def read_mo(self, separate=True):
         moalpha = None
         mobeta = None
@@ -214,6 +216,7 @@ class Load:
 
         return moalpha, mobeta
 
+
     def read_orbitalenergy(self):
         beta_energy = None
         alpha_energy = self.readfchk_matrix("Alpha Orbital Energies",  self.nbsuse*self.ncomp, 1,
@@ -222,6 +225,7 @@ class Load:
             beta_energy = self.readfchk_matrix("Beta Orbital Energies",  self.nbsuse * self.ncomp, 1,
                                                 False, False, True)
         return alpha_energy, beta_energy
+
 
     def readlog_matrix(self, startstr, nrows, ncol, ifltt=False, ifantisymm=False, instance=1):
         # for files with multiple matrices with the same startstr, this pick which instance to read
@@ -293,6 +297,7 @@ class Load:
             matrix = matrix.reshape((nrows, ncol))
 
         return matrix
+
 
     def readfchk_matrix(self, startstr, nrows, ncol, ifltt=False, ifantisymm=False, realonly=False):
         startline = int(str(subprocess.check_output(f"grep -n '{startstr}' {self.fchkfile}", shell=True)).split(" ")[
