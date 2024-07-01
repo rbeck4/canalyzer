@@ -195,6 +195,7 @@ class Load:
     def read_overlap(self):
         return self.readlog_matrix(r"\*\*\* Overlap \*\*\*", self.nbasis, self.nbasis, True,False)
 
+
     def read_mo(self, separate=True):
         moalpha = None
         mobeta = None
