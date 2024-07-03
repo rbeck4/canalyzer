@@ -3,9 +3,11 @@ import subprocess
 import linecache
 import CANalyzer.utilities as util
 import ast
+import h5py
 
 class Load:
     def __init__(self, logfile, fchkfile, filename, groups, displaywidth):
+        self.software = None
         self.logfile = logfile
         self.fchkfile = fchkfile
         self.filename = filename
@@ -28,20 +30,11 @@ class Load:
         self.thresh = 1e-10
         self.displaywidth = displaywidth
 
+        if self.fchkfile[-4:] == ".bin" and self.logfile[-4:] == ".out":
+            self.software = 'CQ'
+        else:
+            self.software = 'GDV'
 
-    def parse_constants(self):
-        # getting atoms
-        self.natoms = int(
-            str(subprocess.check_output("grep 'Atomic numbers ' " + self.fchkfile, shell=True)).split(" ")[
-                -1].split("\\")[0])
-        atomsline = int(str(subprocess.check_output("grep -n 'Atomic numbers' " + self.fchkfile, shell=True)).split(" ")
-                        [0].split("'")[1].split(":")[0]) + 1
-        atomsrows = int(np.ceil(self.natoms / 6))
-        for i in range(atomsrows):
-            atoms = linecache.getline(self.fchkfile, atomsline + i).split(" ")
-            self.atoms += [util.ptable[x] for x in util.onlytype(atoms,int)]
-
-        # converting groups to dict
         if self.groups:
             rawgroups = ast.literal_eval(self.groups)
             self.groupnames = rawgroups.keys()
@@ -55,6 +48,19 @@ class Load:
                 rawrange = ast.literal_eval(f"[{rawrange}]")
                 grouprange.append(rawrange)
             self.groups = dict(zip(self.groupnames, grouprange))
+
+
+    def parse_constants_gdv(self):
+        # getting atoms
+        self.natoms = int(
+            str(subprocess.check_output("grep 'Atomic numbers ' " + self.fchkfile, shell=True)).split(" ")[
+                -1].split("\\")[0])
+        atomsline = int(str(subprocess.check_output("grep -n 'Atomic numbers' " + self.fchkfile, shell=True)).split(" ")
+                        [0].split("'")[1].split(":")[0]) + 1
+        atomsrows = int(np.ceil(self.natoms / 6))
+        for i in range(atomsrows):
+            atoms = linecache.getline(self.fchkfile, atomsline + i).split(" ")
+            self.atoms += [util.ptable[x] for x in util.onlytype(atoms,int)]
 
         # getting parameters
         self.nae = int(
@@ -190,40 +196,85 @@ class Load:
         self.subshell = []
         for i in range(self.natoms):
             for j in new_basis[i]:
-                self.subshell.append((i, self.atoms[i], j))
+                self.subshell.append((i+1, self.atoms[i], j))
 
     def read_overlap(self):
-        return self.readlog_matrix(r"\*\*\* Overlap \*\*\*", self.nbasis, self.nbasis, True,False)
+        if self.software == 'CQ':
+            overlap = self.readbin_matrix("/INTS/OVERLAP")
+            pass
+        else:
+            overlap = self.readlog_matrix(r"\*\*\* Overlap \*\*\*", self.nbasis, self.nbasis, True,False)
+        return overlap
 
 
     def read_mo(self, separate=True):
         moalpha = None
         mobeta = None
-        if self.xhf in ['RHF', 'ROHF', 'RCAS']:
-            moalpha = self.readfchk_matrix("Alpha MO coefficients", self.nbasis*self.ncomp,
-                                                self.nbsuse*self.ncomp, False, False)
-        elif self.xhf == 'UHF':
-            moalpha = self.readfchk_matrix("Alpha MO coefficients", self.nbasis, self.nbsuse, False,
-                                                False)
-            mobeta = self.readfchk_matrix("Beta MO coefficients", self.nbasis, self.nbsuse, False,
-                                               False)
+        if self.software == 'CQ':
+            if self.xhf in ['RHF', 'ROHF', 'RCAS']:
+                moalpha = self.readbin_matrix("/SCF/MO1").T
+            elif self.xhf == "UHF":
+                moalpha = self.readbin_matrix("/SCF/MO1").T
+                mobeta = self.readbin_matrix("/SCF/MO2").T
+            else:
+                moalpha = self.readbin_matrix("/SCF/MO1").T
+                if separate:
+                    mobeta = moalpha[self.nbasis:,:]
+                    moalpha = moalpha[:self.nbasis,:]
+
         else:
-            moalpha = self.readfchk_matrix("Alpha MO coefficients", self.nbasis * self.ncomp,
-                                           self.nbsuse * self.ncomp, False, False)
-            if separate:
-                mobeta = moalpha[1::2, :]
-                moalpha = moalpha[::2, :]
+            if self.xhf in ['RHF', 'ROHF', 'RCAS']:
+                moalpha = self.readfchk_matrix("Alpha MO coefficients", self.nbasis*self.ncomp,
+                                                    self.nbsuse*self.ncomp, False, False)
+            elif self.xhf == 'UHF':
+                moalpha = self.readfchk_matrix("Alpha MO coefficients", self.nbasis, self.nbsuse, False,
+                                                    False)
+                mobeta = self.readfchk_matrix("Beta MO coefficients", self.nbasis, self.nbsuse, False,
+                                                   False)
+            else:
+                moalpha = self.readfchk_matrix("Alpha MO coefficients", self.nbasis * self.ncomp,
+                                               self.nbsuse * self.ncomp, False, False)
+                if separate:
+                    mobeta = moalpha[1::2, :]
+                    moalpha = moalpha[::2, :]
 
         return moalpha, mobeta
 
 
     def read_orbitalenergy(self):
         beta_energy = None
-        alpha_energy = self.readfchk_matrix("Alpha Orbital Energies",  self.nbsuse*self.ncomp, 1,
-                                            False, False, True)
-        if self.xhf == 'UHF':
-            beta_energy = self.readfchk_matrix("Beta Orbital Energies",  self.nbsuse * self.ncomp, 1,
+        if self.software == 'CQ':
+            if self.xhf != 'UHF':
+                startline_occ = int(str(subprocess.check_output(f"grep -n 'Orbital Eigenenergies / Eh' {self.logfile}", shell=True)).split(":")[0].split("'")[1]) + 3
+                occrows = int(np.ceil(self.nae / 5))
+                endrow = startline_occ + occrows
+                alpha_energy = []
+                while True:
+                    try:
+                        energies = [float(x) for x in linecache.getline(self.logfile, startline_occ).split()]
+                        alpha_energy += energies
+                        startline_occ += 1
+                    except:
+                        break
+                startline_virt = startline_occ + 1
+                while True:
+                    try:
+                        energies = [float(x) for x in linecache.getline(self.logfile, startline_virt).split()]
+                        alpha_energy += energies
+                        startline_virt += 1
+                    except:
+                        break
+                alpha_energy = np.array([alpha_energy]).T
+
+            else:
+                raise Exception("UHF NYI for CQ")
+
+        else:
+            alpha_energy = self.readfchk_matrix("Alpha Orbital Energies",  self.nbsuse*self.ncomp, 1,
                                                 False, False, True)
+            if self.xhf == 'UHF':
+                beta_energy = self.readfchk_matrix("Beta Orbital Energies",  self.nbsuse * self.ncomp, 1,
+                                                    False, False, True)
         return alpha_energy, beta_energy
 
 
@@ -300,6 +351,10 @@ class Load:
 
 
     def readfchk_matrix(self, startstr, nrows, ncol, ifltt=False, ifantisymm=False, realonly=False):
+
+        if ifltt:
+            raise Exception("Reading LTT from fchk NYI")
+
         startline = int(str(subprocess.check_output(f"grep -n '{startstr}' {self.fchkfile}", shell=True)).split(" ")[
             0].split("'")[1].split(":")[0]) + 1
         rawmatrix = []
@@ -329,7 +384,16 @@ class Load:
 
         return matrix
 
-    def overlay_route(self, overlay):
+
+    def readbin_matrix(self, h5path, ndim=None, realonly=False):
+        h5bin = h5py.File(self.fchkfile, 'r')
+        matrix = h5bin[h5path][:]
+        if ndim:
+            matrix = np.reshape(matrix, (ndim, ndim))
+        return matrix
+
+
+    def overlay_route(self):
         line1 = str(subprocess.check_output("grep ' 3/' " + self.logfile, shell=True)).split(" ")[-1].split(",")
         line2 = []
         first = True
@@ -349,9 +413,112 @@ class Load:
         final = ast.literal_eval(",".join(line2))
         return final
 
+    def parse_constants_cq(self):
+        with h5py.File(self.fchkfile, "r") as h5f:
+            # loading ncomp
+            self.ncomp = int(h5f['REF']['NCOMP'][0])
+
+            # loading reference type
+            reftype = int(h5f['REF']['REFTYPE'][0])
+            if reftype == 1:
+                self.xhf = "RHF"
+            elif reftype == 2:
+                self.xhf = "UHF"
+            elif reftype == 3:
+                self.xhf = "ROHF"
+            elif reftype == 4:
+                self.xhf = "GHF"
+            elif reftype == 5:
+                self.xhf = "DHF"
+                raise Exception("DHF NYI")
+            else:
+                raise Exception("Invalid reference type detected")
+
+        # loading NRI
+        self.ri = str(subprocess.check_output(f"grep 'Reference:   ' {self.logfile}", shell=True)).split()[2]
+
+        # loading pureD, pureF
+        try:
+            isForceCart = str(subprocess.check_output(f"grep 'NAtoms' {self.logfile}", shell=True)).split()
+            if "true" in isForceCart or "True" in isForceCart:
+                self.pureD = 1
+                self.pureF = 1
+        except:
+            pass
+
+        # loading atoms
+        self.natoms = int(str(subprocess.check_output(f"grep 'NAtoms' {self.logfile}", shell=True)).split(" ")[
+            -1][:-3])
+        atomstart = int(str(subprocess.check_output(
+            f"grep -n 'geom:' {self.logfile}",
+            shell=True)).split(" ")[0].split("'")[1].split(":")[0])
+        atomnumber = 1
+        while atomnumber <= self.natoms:
+            atom = linecache.getline(self.logfile, atomstart + atomnumber).split(" ")[1]
+            self.atoms.append(atom)
+            atomnumber += 1
+
+        # loading nbasis
+        self.nbasis = int(str(subprocess.check_output(f"grep 'NBasis' {self.logfile}", shell=True)).split(" ")[
+                              -1][:-3])
+        self.nbsuse = self.nbasis
+
+        # loading number of electrons
+        self.nae = int(str(subprocess.check_output(f"grep 'Total Electrons' {self.logfile}", shell=True)).split(" ")[
+                              -1][:-3])
+        if self.xhf == 'GHF':
+            self.nbe = 0
+        elif self.xhf == 'RHF':
+            self.nbe = self.nae / 2
+            self.nae = self.nbe
+        else:
+            totale = self.nae
+            self.nae = input("How many alpha electrons?")
+            self.nbe = input("How many beta electrons?")
+            if self.nae + self.nbe != totale:
+                raise Exception("Invalid number of alpha and beta electrons")
+
+
+        # loading basis
+        self.maxL = int(str(subprocess.check_output(f"grep '  Max L  ' {self.logfile}", shell=True)).split(" ")[
+                           -1][:-3])
+
+        basisstart = int(str(subprocess.check_output(f"grep -n 'EigV --' {self.logfile}", shell=True)).split(" ")[0].split("'")[-1][:-1]) + 2
+        basiscount = 1
+        linenumber = 0
+        atomcount = -1
+        basis = [[] for i in range(self.natoms)]
+        while basiscount <= self.nbasis:
+            line = linecache.getline(self.logfile, basisstart + linenumber).split()
+            try:
+                element3 = line[2]
+
+                if "-" in element3:
+                    atomcount += 1
+                    oam = line[4][0]
+                else:
+                    oam = element3[0]
+
+                basis[atomcount].append(oam)
+                basiscount += 1
+
+            except:
+                pass
+
+            linenumber += 1
+
+        self.subshell = []
+        for i in range(self.natoms):
+            for j in basis[i]:
+                self.subshell.append((i+1, self.atoms[i], j))
+
+
     def start(self):
-        self.parse_constants()
-        self.parse_log()
+        if self.software == 'CQ':
+            self.parse_constants_cq()
+        else:
+            self.parse_constants_gdv()
+            self.parse_log()
 
 
 
