@@ -59,6 +59,20 @@ def eig(A):
     return evalue, evector
 
 
+def normalize_matrix(A):
+    import numpy as np
+
+    nrows, ncols = A.shape
+    for j in range(ncols):
+        vec = A[:, j] / np.linalg.norm(A[:, j])
+        for i in range(nrows):
+            A[i, j] = vec[i]
+    return A
+
+
+c = 137.035999074
+
+
 OAM = {
     "S": 0,
     "P": 1,

@@ -28,7 +28,7 @@ class MO(Load):
             conj_moalpha = np.conj(np.copy(self.moalpha))
             pop = np.real(np.multiply(conj_moalpha, cs))
 
-        if self.xhf in ['GHF', 'GCAS', 'UHF']:
+        if self.xhf in ['GHF', 'GCAS', 'UHF', 'DHF']:
             self.alpha_pop = pop
             csbeta = np.matmul(self.overlap, self.mobeta)
             if self.nri == 1:
@@ -38,6 +38,35 @@ class MO(Load):
                 self.beta_pop = np.real(np.multiply(conj_mobeta, csbeta))
         else:
             self.alpha_pop = pop
+
+        # checking that C\dag S C is unity
+        scratchLa = conj_moalpha.T @ cs
+        scratchLb = conj_mobeta.T @ cs
+
+        if self.xhf == 'DHF':
+            moalpha_sp, mobeta_sp = self.read_mo_sp()
+
+            kinetic_energy = self.read_kinetic()
+            csalpha = kinetic_energy @ moalpha_sp
+            csbeta = kinetic_energy @ mobeta_sp
+
+            conj_moalpha_sp = np.conj(np.copy(moalpha_sp))
+            conj_mobeta_sp = np.conj(np.copy(mobeta_sp))
+
+            alpha_pop_sp = (1/(2*util.c*util.c)) * np.multiply(conj_moalpha_sp, csalpha)
+            beta_pop_sp = (1/(2*util.c*util.c)) * np.multiply(conj_mobeta_sp, csbeta)
+
+            self.alpha_pop += np.real(alpha_pop_sp)
+            self.beta_pop += np.real(beta_pop_sp)
+
+            # checking that C\dag S C is unity
+            scratchSa = (conj_moalpha_sp.T @ csalpha) * (1/(2*util.c*util.c))
+            scratchSb = (conj_mobeta_sp.T @ csbeta) * (1 / (2 * util.c * util.c))
+
+        # checking that C\dag S C is unity
+        scratch = scratchLa + scratchSa + scratchLb + scratchSb
+        np.savetxt("CTSC_alpha.csv", scratch, delimiter=",")
+
 
         if not self.groups:
             self.reduced_groups = []
@@ -49,7 +78,7 @@ class MO(Load):
                     atomshellpair = self.subshell[i][1:]
                     index = self.reduced_groups.index(atomshellpair)
                     self.sorted_alphapop[index, j] += self.alpha_pop[i, j]
-                    if self.xhf in ['UHF', 'GHF', 'GCAS']:
+                    if self.xhf in ['UHF', 'GHF', 'GCAS', 'DHF']:
                         self.sorted_betapop[index, j] += self.beta_pop[i, j]
         else:
             self.reduced_groups = [(g, l) for g in self.groupnames for l in range(self.maxL + 1)]
@@ -63,7 +92,7 @@ class MO(Load):
                     group = self.identify_group(atom_num)
                     index = self.reduced_groups.index((group, l))
                     self.sorted_alphapop[index, j] += self.alpha_pop[i, j]
-                    if self.xhf in ['UHF', 'GHF', 'GCAS']:
+                    if self.xhf in ['UHF', 'GHF', 'GCAS', 'DHF']:
                         self.sorted_betapop[index, j] += self.beta_pop[i, j]
         self.sorted_alphapop = np.real(self.sorted_alphapop)
         self.sorted_betapop = np.real(self.sorted_betapop)
@@ -82,14 +111,14 @@ class MO(Load):
 
     def print_mulliken(self):
         self.alpha_orbital_energy, self.beta_orbital_energy = self.read_orbitalenergy()
-        if self.xhf in ['GHF', 'GCAS']:
+        if self.xhf in ['GHF', 'GCAS', 'DHF']:
             results_alpha = dict(zip([('Orbital Energy', '(Hartree)')] + self.reduced_groups,
                                      np.append(self.alpha_orbital_energy.round(5).T,
                                                (self.sorted_alphapop + self.sorted_betapop).round(3), axis=0)))
             remark_alpha = f"\n{self.xhf} Orbitals\n"
             self.alpha_pop = np.real(self.alpha_pop.round(3))
             self.beta_pop = np.real(self.beta_pop.round(3))
-            alpha_spin = [np.sum(self.alpha_pop[:,i]) for i in range(self.nbsuse*self.ncomp)]
+            alpha_spin = [np.sum(self.alpha_pop[:, i]) for i in range(self.nbsuse*self.ncomp)]
             beta_spin = [np.sum(self.beta_pop[:, i]) for i in range(self.nbsuse*self.ncomp)]
             self.spin = dict(zip(['Orbital Energy (Hartree)', 'Alpha', 'Beta'],
                                  [self.alpha_orbital_energy.flatten().round(5), alpha_spin, beta_spin]))
@@ -121,7 +150,7 @@ class MO(Load):
                 results_beta_df.index += 1
                 print(remark_beta)
                 print(results_beta_df)
-            elif self.xhf in ['GHF', 'GCAS']:
+            elif self.xhf in ['GHF', 'GCAS', 'DHF']:
                 spin_df = pd.DataFrame(self.spin)
                 spin_df.index += 1
                 print('\nSpin Contribution\n')

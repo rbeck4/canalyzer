@@ -216,12 +216,17 @@ class Load:
             elif self.xhf == "UHF":
                 moalpha = self.readbin_matrix("/SCF/MO1").T
                 mobeta = self.readbin_matrix("/SCF/MO2").T
+            elif self.xhf == 'DHF':
+                moalpha = self.read_mo_full4c()
+                moalpha = moalpha[:self.nbasis * 2, :self.nbasis * 2]
+                if separate:
+                    mobeta = moalpha[self.nbasis:, :]
+                    moalpha = moalpha[:self.nbasis, :]
             else:
                 moalpha = self.readbin_matrix("/SCF/MO1").T
                 if separate:
-                    mobeta = moalpha[self.nbasis:,:]
-                    moalpha = moalpha[:self.nbasis,:]
-
+                    mobeta = moalpha[self.nbasis:, :]
+                    moalpha = moalpha[:self.nbasis, :]
         else:
             if self.xhf in ['RHF', 'ROHF', 'RCAS']:
                 moalpha = self.readfchk_matrix("Alpha MO coefficients", self.nbasis*self.ncomp,
@@ -239,6 +244,56 @@ class Load:
                     moalpha = moalpha[::2, :]
 
         return moalpha, mobeta
+
+
+    def read_mo_sp(self):
+        moalpha = self.read_mo_full4c()
+        moalpha = moalpha[self.nbasis*2:, :self.nbasis*2]
+        mobeta = moalpha[self.nbasis:, :]
+        moalpha = moalpha[:self.nbasis, :]
+        return moalpha, mobeta
+
+
+    def read_mo_full4c(self):
+        if self.xhf != 'DHF':
+            raise Exception("read_mo_full4c only for DHF")
+
+        C = np.zeros((4 * self.nbasis, 4 * self.nbasis), dtype="complex128")
+        rawC = self.readbin_matrix("/SCF/MO1").T
+
+        C[:self.nbasis, :self.nbasis] = rawC[:self.nbasis, :self.nbasis]  # C aa L+
+        C[self.nbasis:2 * self.nbasis, :self.nbasis] = rawC[2 * self.nbasis: 3 * self.nbasis, :self.nbasis]  # C ba L+
+        C[2 * self.nbasis:3 * self.nbasis, :self.nbasis] = rawC[self.nbasis:2 * self.nbasis, :self.nbasis]  # C aa S+
+        C[3 * self.nbasis:, :self.nbasis] = rawC[3 * self.nbasis:, :self.nbasis]  # C ba S+
+
+        C[:self.nbasis, self.nbasis:2 * self.nbasis] = rawC[:self.nbasis, 2 * self.nbasis:3 * self.nbasis]  # C ab L+
+        C[self.nbasis:2 * self.nbasis, self.nbasis:2 * self.nbasis] = rawC[2 * self.nbasis:3 * self.nbasis,
+                                                                      2 * self.nbasis:3 * self.nbasis]  # C bb L+
+        C[2 * self.nbasis:3 * self.nbasis, self.nbasis:2 * self.nbasis] = rawC[self.nbasis:2 * self.nbasis,
+                                                                          2 * self.nbasis:3 * self.nbasis]  # C ab S+
+        C[3 * self.nbasis:, self.nbasis:2 * self.nbasis] = rawC[3 * self.nbasis:, 3 * self.nbasis:]  # C bb S-
+
+        C[:self.nbasis, 2 * self.nbasis:3 * self.nbasis] = rawC[:self.nbasis, self.nbasis:2 * self.nbasis]  # C aa L-
+        C[self.nbasis:2 * self.nbasis, 2 * self.nbasis:3 * self.nbasis] = rawC[2 * self.nbasis:3 * self.nbasis,
+                                                                          self.nbasis:2 * self.nbasis]  # C ba L-
+        C[2 * self.nbasis:3 * self.nbasis, 2 * self.nbasis:3 * self.nbasis] = rawC[self.nbasis:2 * self.nbasis,
+                                                                              self.nbasis:2 * self.nbasis]  # C aa S-
+        C[3 * self.nbasis:, 2 * self.nbasis:3 * self.nbasis] = rawC[3 * self.nbasis:,
+                                                               self.nbasis:2 * self.nbasis]  # C ba L-
+
+        C[:self.nbasis, 3 * self.nbasis:] = rawC[:self.nbasis, 3 * self.nbasis:]  # C ab L-
+        C[self.nbasis:2 * self.nbasis, 3 * self.nbasis:] = rawC[2 * self.nbasis:3 * self.nbasis,
+                                                           3 * self.nbasis:]  # C bb L-
+        C[2 * self.nbasis:3 * self.nbasis, 3 * self.nbasis:] = rawC[self.nbasis:2 * self.nbasis,
+                                                               3 * self.nbasis:]  # C ab S-
+        C[3 * self.nbasis:, 3 * self.nbasis:] = rawC[3 * self.nbasis:, 3 * self.nbasis:]  # C bb S-
+
+        return C
+
+
+    def read_kinetic(self):
+        if self.software == 'CQ':
+            return self.readbin_matrix("/INTS/KINETIC")
 
 
     def read_orbitalenergy(self):
@@ -393,8 +448,8 @@ class Load:
         return matrix
 
 
-    def overlay_route(self):
-        line1 = str(subprocess.check_output("grep ' 3/' " + self.logfile, shell=True)).split(" ")[-1].split(",")
+    def overlay_route(self, overlay):
+        line1 = str(subprocess.check_output(f"grep ' {overlay}/' " + self.logfile, shell=True)).split(" ")[-1].split(",")
         line2 = []
         first = True
         for x in line1:
@@ -413,6 +468,7 @@ class Load:
         final = ast.literal_eval(",".join(line2))
         return final
 
+
     def parse_constants_cq(self):
         with h5py.File(self.fchkfile, "r") as h5f:
             # loading ncomp
@@ -430,12 +486,18 @@ class Load:
                 self.xhf = "GHF"
             elif reftype == 5:
                 self.xhf = "DHF"
-                raise Exception("DHF NYI")
+                # we only look at LL block in DHF MO analysis
+                self.ncomp = 2
+                self.nri = 2
             else:
                 raise Exception("Invalid reference type detected")
 
         # loading NRI
         self.ri = str(subprocess.check_output(f"grep 'Reference:   ' {self.logfile}", shell=True)).split()[2]
+        if self.ri == 'Real':
+            self.nri = 1
+        elif self.ri == 'Complex':
+            self.nri = 2
 
         # loading pureD, pureF
         try:
@@ -466,7 +528,7 @@ class Load:
         # loading number of electrons
         self.nae = int(str(subprocess.check_output(f"grep 'Total Electrons' {self.logfile}", shell=True)).split(" ")[
                               -1][:-3])
-        if self.xhf == 'GHF':
+        if self.xhf in ['GHF', 'DHF']:
             self.nbe = 0
         elif self.xhf == 'RHF':
             self.nbe = self.nae / 2
@@ -491,14 +553,14 @@ class Load:
         while basiscount <= self.nbasis:
             line = linecache.getline(self.logfile, basisstart + linenumber).split()
             try:
-                element3 = line[2]
-
-                if "-" in element3:
+                element = line[2]
+                if "-" in element and "e" not in element:
                     atomcount += 1
                     oam = line[4][0]
+                elif "e" in element or "0" in element:
+                    oam = line[1][2]
                 else:
-                    oam = element3[0]
-
+                    oam = element[0]
                 basis[atomcount].append(oam)
                 basiscount += 1
 
