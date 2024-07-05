@@ -301,8 +301,6 @@ class Load:
         if self.software == 'CQ':
             if self.xhf != 'UHF':
                 startline_occ = int(str(subprocess.check_output(f"grep -n 'Orbital Eigenenergies / Eh' {self.logfile}", shell=True)).split(":")[0].split("'")[1]) + 3
-                occrows = int(np.ceil(self.nae / 5))
-                endrow = startline_occ + occrows
                 alpha_energy = []
                 while True:
                     try:
