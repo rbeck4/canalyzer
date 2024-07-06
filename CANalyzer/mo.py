@@ -65,7 +65,6 @@ class MO(Load):
 
         # checking that C\dag S C is unity
         scratch = scratchLa + scratchSa + scratchLb + scratchSb
-        np.savetxt("CTSC_alpha.csv", scratch, delimiter=",")
 
 
         if not self.groups:
