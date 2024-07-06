@@ -39,10 +39,6 @@ class MO(Load):
         else:
             self.alpha_pop = pop
 
-        # checking that C\dag S C is unity
-        scratchLa = conj_moalpha.T @ cs
-        scratchLb = conj_mobeta.T @ cs
-
         if self.xhf == 'DHF':
             moalpha_sp, mobeta_sp = self.read_mo_sp()
 
@@ -58,13 +54,6 @@ class MO(Load):
 
             self.alpha_pop += np.real(alpha_pop_sp)
             self.beta_pop += np.real(beta_pop_sp)
-
-            # checking that C\dag S C is unity
-            scratchSa = (conj_moalpha_sp.T @ csalpha) * (1/(2*util.c*util.c))
-            scratchSb = (conj_mobeta_sp.T @ csbeta) * (1 / (2 * util.c * util.c))
-
-        # checking that C\dag S C is unity
-        scratch = scratchLa + scratchSa + scratchLb + scratchSb
 
 
         if not self.groups:
