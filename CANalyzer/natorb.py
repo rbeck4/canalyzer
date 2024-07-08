@@ -18,7 +18,7 @@ class NaturalOrbitals(Load):
 
 
     def start(self):
-        self.parse_constants()
+        self.parse_constants_gdv()
         self.parse_log()
 
         # getting number of active orbitals
