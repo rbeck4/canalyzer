@@ -72,7 +72,7 @@ class NaturalOrbitals(Load):
             matsize = self.nbasis * self.nbsuse * self.ncomp * self.ncomp
             write_fchk("Alpha MO coefficients", self.nri, natorb, matsize, self.fchkfile, newfchk)
 
-            with open(self.filename, 'a') as sys.stdout, pd.option_context('display.max_rows', None,
+            with open(f"{self.filename}-state{istate}.txt", 'a') as sys.stdout, pd.option_context('display.max_rows', None,
                                                                            'display.max_columns', None):
                 print(f"Natural Orbital Occupation Numbers for State {istate}")
                 for i in range(len(noon)):

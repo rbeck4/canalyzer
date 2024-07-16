@@ -53,7 +53,7 @@ elif args.jobtype == 'Projection':
     Projection.print_project()
 elif args.jobtype == 'NatOrb':
     if not args.filename:
-        filename += 'natorb.txt'
+        filename += 'natorb'
     NatOrb = CANalyzer.natorb.NaturalOrbitals(args.log, args.fchk1, filename, args.groups, displaywidth)
     NatOrb.start()
     NatOrb.compute_natorb()
