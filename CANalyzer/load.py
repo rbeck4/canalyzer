@@ -259,34 +259,16 @@ class Load:
             raise Exception("read_mo_full4c only for DHF")
 
         C = np.zeros((4 * self.nbasis, 4 * self.nbasis), dtype="complex128")
+        preC = np.zeros((4 * self.nbasis, 4 * self.nbasis), dtype="complex128")
         rawC = self.readbin_matrix("/SCF/MO1").T
 
-        C[:self.nbasis, :self.nbasis] = rawC[:self.nbasis, :self.nbasis]  # C aa L+
-        C[self.nbasis:2 * self.nbasis, :self.nbasis] = rawC[2 * self.nbasis: 3 * self.nbasis, :self.nbasis]  # C ba L+
-        C[2 * self.nbasis:3 * self.nbasis, :self.nbasis] = rawC[self.nbasis:2 * self.nbasis, :self.nbasis]  # C aa S+
-        C[3 * self.nbasis:, :self.nbasis] = rawC[3 * self.nbasis:, :self.nbasis]  # C ba S+
+        preC[:, :2 * self.nbasis] = rawC[:, 2 * self.nbasis:]
+        preC[:, 2 * self.nbasis:] = rawC[:, :2 * self.nbasis]
 
-        C[:self.nbasis, self.nbasis:2 * self.nbasis] = rawC[:self.nbasis, 2 * self.nbasis:3 * self.nbasis]  # C ab L+
-        C[self.nbasis:2 * self.nbasis, self.nbasis:2 * self.nbasis] = rawC[2 * self.nbasis:3 * self.nbasis,
-                                                                      2 * self.nbasis:3 * self.nbasis]  # C bb L+
-        C[2 * self.nbasis:3 * self.nbasis, self.nbasis:2 * self.nbasis] = rawC[self.nbasis:2 * self.nbasis,
-                                                                          2 * self.nbasis:3 * self.nbasis]  # C ab S+
-        C[3 * self.nbasis:, self.nbasis:2 * self.nbasis] = rawC[3 * self.nbasis:, 3 * self.nbasis:]  # C bb S-
-
-        C[:self.nbasis, 2 * self.nbasis:3 * self.nbasis] = rawC[:self.nbasis, self.nbasis:2 * self.nbasis]  # C aa L-
-        C[self.nbasis:2 * self.nbasis, 2 * self.nbasis:3 * self.nbasis] = rawC[2 * self.nbasis:3 * self.nbasis,
-                                                                          self.nbasis:2 * self.nbasis]  # C ba L-
-        C[2 * self.nbasis:3 * self.nbasis, 2 * self.nbasis:3 * self.nbasis] = rawC[self.nbasis:2 * self.nbasis,
-                                                                              self.nbasis:2 * self.nbasis]  # C aa S-
-        C[3 * self.nbasis:, 2 * self.nbasis:3 * self.nbasis] = rawC[3 * self.nbasis:,
-                                                               self.nbasis:2 * self.nbasis]  # C ba L-
-
-        C[:self.nbasis, 3 * self.nbasis:] = rawC[:self.nbasis, 3 * self.nbasis:]  # C ab L-
-        C[self.nbasis:2 * self.nbasis, 3 * self.nbasis:] = rawC[2 * self.nbasis:3 * self.nbasis,
-                                                           3 * self.nbasis:]  # C bb L-
-        C[2 * self.nbasis:3 * self.nbasis, 3 * self.nbasis:] = rawC[self.nbasis:2 * self.nbasis,
-                                                               3 * self.nbasis:]  # C ab S-
-        C[3 * self.nbasis:, 3 * self.nbasis:] = rawC[3 * self.nbasis:, 3 * self.nbasis:]  # C bb S-
+        C[:self.nbasis, :] = preC[:self.nbasis, :]
+        C[3 * self.nbasis:, :] = preC[3 * self.nbasis:, :]
+        C[self.nbasis:2 * self.nbasis, :] = preC[2 * self.nbasis:3 * self.nbasis, :]
+        C[2 * self.nbasis:3 * self.nbasis, :] = preC[self.nbasis:2 * self.nbasis, :]
 
         return C
 
@@ -496,6 +478,13 @@ class Load:
             self.nri = 1
         elif self.ri == 'Complex':
             self.nri = 2
+        else:
+            while self.ri not in ['Real', 'Complex']:
+                self.ri = input("Is this calculation Real or Complex?   ")
+                if self.ri == 'Real':
+                    self.nri = 1
+                elif self.ri == 'Complex':
+                    self.nri = 2
 
         # loading pureD, pureF
         try:
@@ -514,7 +503,7 @@ class Load:
             shell=True)).split(" ")[0].split("'")[1].split(":")[0])
         atomnumber = 1
         while atomnumber <= self.natoms:
-            atom = linecache.getline(self.logfile, atomstart + atomnumber).split(" ")[1]
+            atom = linecache.getline(self.logfile, atomstart + atomnumber).split()[0]
             self.atoms.append(atom)
             atomnumber += 1
 
