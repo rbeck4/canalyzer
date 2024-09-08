@@ -541,19 +541,19 @@ class Load:
             line = linecache.getline(self.logfile, basisstart + linenumber).split()
             try:
                 element = line[2]
-                if "-" in element and "e" not in element:
+                if "-" in element and "e" not in element and len(line) == 9:
                     atomcount += 1
                     oam = line[4][0]
                 elif "e" in element or "0" in element:
                     oam = line[1][2]
                 else:
                     oam = element[0]
+
                 basis[atomcount].append(oam)
                 basiscount += 1
 
             except:
                 pass
-
             linenumber += 1
 
         self.subshell = []
