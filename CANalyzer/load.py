@@ -535,25 +535,16 @@ class Load:
         basisstart = int(str(subprocess.check_output(f"grep -n 'EigV --' {self.logfile}", shell=True)).split(" ")[0].split("'")[-1][:-1]) + 2
         basiscount = 1
         linenumber = 0
-        atomcount = -1
+        atomcount = 0
         basis = [[] for i in range(self.natoms)]
         while basiscount <= self.nbasis:
-            line = linecache.getline(self.logfile, basisstart + linenumber).split()
-            try:
-                element = line[2]
-                if "-" in element and "e" not in element and len(line) == 9:
-                    atomcount += 1
-                    oam = line[4][0]
-                elif "e" in element or "0" in element:
-                    oam = line[1][2]
-                else:
-                    oam = element[0]
-
+            line = linecache.getline(self.logfile, basisstart + linenumber)
+            if line == "\n":
+                atomcount += 1
+            else:
+                oam = line[18]
                 basis[atomcount].append(oam)
                 basiscount += 1
-
-            except:
-                pass
             linenumber += 1
 
         self.subshell = []
