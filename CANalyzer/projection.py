@@ -32,17 +32,17 @@ class Projection():
             for i in range(nmo1):
                 for j in range(nmo2):
                     contrib = (self.ctsc[i, j]*self.ctsc[i,j]).round(5)
-                    if np.abs(contrib) >= 0.1:
+                    if np.abs(contrib) >= 0.01:
                         print(f"Contribution of fchk1 MO {i+1} from fchk2 MO {j+1}: {contrib}\n")
 
 
     def start(self):
-        self.fchk1.parse_constants()
+        self.fchk1.parse_constants_gdv()
         self.fchk1.parse_log()
         self.overlap = self.fchk1.read_overlap()
         self.mo1a, self.mo1b = self.fchk1.read_mo()
 
-        self.fchk2.parse_constants()
+        self.fchk2.parse_constants_gdv()
         self.fchk2.parse_log()
         self.mo2a, self.mo2b = self.fchk2.read_mo()
 

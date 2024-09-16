@@ -429,22 +429,12 @@ class Load:
 
 
     def overlay_route(self, overlay):
-        line1 = str(subprocess.check_output(f"grep ' {overlay}/' " + self.logfile, shell=True)).split(" ")[-1].split(",")
-        line2 = []
-        first = True
-        for x in line1:
-            if "=" in x:
-                if "/" in x:
-                    id = x.index("/")
-                    if first:
-                        x = x[id + 1:]
-                        first = False
-                    elif not first:
-                        x = x[:id]
-                x = x.replace("=", ":")
-                line2.append(x)
-        line2[0] = "{" + line2[0]
-        line2[-1] = line2[-1] + "}"
+        line1 = str(subprocess.check_output(r"grep '\ " + f"{overlay}/' " + self.logfile, shell=True)).split()[1].split(",")
+        line2 = [x.replace("=",":") for x in line1 if "=" in x]
+        first = "{" + line2[0].split("/")[1]
+        last = line2[-1].split("/")[0] + "}"
+        line2[0] = first
+        line2[-1] = last
         final = ast.literal_eval(",".join(line2))
         return final
 
