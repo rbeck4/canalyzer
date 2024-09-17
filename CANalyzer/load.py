@@ -159,44 +159,42 @@ class Load:
             basisstart += 1
 
         new_basis = []
-        for a in basis:
-            try:
-                spindex = a.index("SP",0, len(a))
-                spcount = 0
-                while 'SP' in a:
-                    a.remove("SP")
-                    spcount += 1
-                for p in range(0, spcount):
-                    a.insert(spindex + p, 'P')
-                for p in range(0, spcount):
-                    a.insert(spindex + p, 'S')
-            except:
-                pass
-
-            new_a = []
-            for ss in range(len(a)):
-                l = int(util.OAM[a[ss]])
-                multiplicity = 2 * l + 1
-                if l == 2:
-                    if self.pureD == 1:
-                        multiplicity = 6
-                    elif self.pureD == 0:
-                        multiplicity = 5
+        for a in range(len(basis)):
+            for ss in basis[a]:
+                if len(ss) == 1:
+                    l = int(util.OAM[ss])
+                    multiplicity = 2 * l + 1
+                    ml = []
+                    for i in range(l+1):
+                        if i == 0:
+                            ml.append(i)
+                        else:
+                            ml.append(i)
+                            ml.append(-i)
+                    for i in range(multiplicity):
+                        new_basis.append((a+1, self.atoms[a], ss, ml[i]))
                 else:
-                    if self.pureF == 1:
-                        multiplicity = int((l + 1) * (l + 2) / 2)
-                    elif self.pureF == 0:
-                        multiplicity = int(2 * l + 1)
+                    ss_split = list(ss)
+                    for sss in ss_split:
+                        l = int(util.OAM[sss])
+                        multiplicity = 2 * l + 1
+                        if sss != "P":
+                            ml = []
+                            for i in range(l+1):
+                                if i == 0:
+                                    ml.append(i)
+                                else:
+                                    ml.append(i)
+                                    ml.append(-i)
+                            for i in range(multiplicity):
+                                new_basis.append((a+1, self.atoms[a], sss, ml[i]))
+                        elif sss == "P":
+                            new_basis.append((a+1, self.atoms[a], sss, 1))
+                            new_basis.append((a+1, self.atoms[a], sss, -1))
+                            new_basis.append((a+1, self.atoms[a], sss, 0))
 
-                for i in range(multiplicity):
-                    new_a.append(a[ss])
+        self.subshell = new_basis
 
-            new_basis.append(new_a)
-
-        self.subshell = []
-        for i in range(self.natoms):
-            for j in new_basis[i]:
-                self.subshell.append((i+1, self.atoms[i], j))
 
     def read_overlap(self):
         if self.software == 'CQ':
@@ -282,7 +280,7 @@ class Load:
         beta_energy = None
         if self.software == 'CQ':
             if self.xhf != 'UHF':
-                startline_occ = int(str(subprocess.check_output(f"grep -n 'Orbital Eigenenergies / Eh' {self.logfile}", shell=True)).split(":")[0].split("'")[1]) + 3
+                startline_occ = int(str(subprocess.check_output(f"grep -n 'Orbital Eigenenergies ' {self.logfile}", shell=True)).split(":")[0].split("'")[1]) + 3
                 alpha_energy = []
                 while True:
                     try:
@@ -533,14 +531,26 @@ class Load:
                 atomcount += 1
             else:
                 oam = line[18]
-                basis[atomcount].append(oam)
+                str_ml = line[19] + line[20]
+                try:
+                    ml = int(str_ml)
+                except:
+                    if str_ml == "X":
+                        ml = 1
+                    elif str_ml == "Y":
+                        ml = -1
+                    elif str_ml == "Z":
+                        ml = 0
+                    else:
+                        ml = 0
+                basis[atomcount].append((oam, ml))
                 basiscount += 1
             linenumber += 1
 
         self.subshell = []
         for i in range(self.natoms):
             for j in basis[i]:
-                self.subshell.append((i+1, self.atoms[i], j))
+                self.subshell.append((i+1, self.atoms[i], j[0], j[1]))
 
 
     def start(self):

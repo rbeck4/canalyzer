@@ -5,7 +5,7 @@ import CANalyzer.utilities as util
 import sys
 
 class MO(Load):
-    def __init__(self, logfile, fchkfile, filename, groups, displaywidth):
+    def __init__(self, logfile, fchkfile, filename, groups, displaywidth, separate_ml):
         Load.__init__(self, logfile, fchkfile, filename, groups, displaywidth)
         self.moalpha = None
         self.mobeta = None
@@ -17,6 +17,7 @@ class MO(Load):
         self.reduced_groups = None
         self.alpha_orbital_energy = None
         self.beta_orbital_energy = None
+        self.separate_ml = separate_ml
 
     def mulliken_analysis(self):
         self.overlap = self.read_overlap()
@@ -55,20 +56,25 @@ class MO(Load):
             self.alpha_pop += np.real(alpha_pop_sp)
             self.beta_pop += np.real(beta_pop_sp)
 
+        if self.separate_ml:
+            get_ml = 4
+        else:
+            get_ml = 3
 
         if not self.groups:
             self.reduced_groups = []
-            [self.reduced_groups.append(x[1:]) for x in self.subshell if x[1:] not in self.reduced_groups]
+            [self.reduced_groups.append(x[1:get_ml]) for x in self.subshell if x[1:get_ml] not in self.reduced_groups]
             self.sorted_alphapop = np.zeros((len(self.reduced_groups), self.nbsuse*self.ncomp),dtype="complex128")
             self.sorted_betapop = np.zeros((len(self.reduced_groups), self.nbsuse*self.ncomp),dtype="complex128")
             for j in range(self.nbsuse*self.ncomp):
                 for i in range(self.nbasis):
-                    atomshellpair = self.subshell[i][1:]
+                    atomshellpair = self.subshell[i][1:get_ml]
                     index = self.reduced_groups.index(atomshellpair)
                     self.sorted_alphapop[index, j] += self.alpha_pop[i, j]
                     if self.xhf in ['UHF', 'GHF', 'GCAS', 'DHF']:
                         self.sorted_betapop[index, j] += self.beta_pop[i, j]
         else:
+            self.separate_ml = False
             self.reduced_groups = [(g, l) for g in self.groupnames for l in range(self.maxL + 1)]
             self.sorted_alphapop = np.zeros((len(self.reduced_groups), self.nbsuse*self.ncomp))
             self.sorted_betapop = np.zeros((len(self.reduced_groups), self.nbsuse*self.ncomp))
@@ -99,8 +105,12 @@ class MO(Load):
 
     def print_mulliken(self):
         self.alpha_orbital_energy, self.beta_orbital_energy = self.read_orbitalenergy()
+        if self.separate_ml:
+            header = ('Orbital Energy', '(Hartree)', 'ml')
+        else:
+            header = ('Orbital Energy', '(Hartree)')
         if self.xhf in ['GHF', 'GCAS', 'DHF']:
-            results_alpha = dict(zip([('Orbital Energy', '(Hartree)')] + self.reduced_groups,
+            results_alpha = dict(zip([header] + self.reduced_groups,
                                      np.append(self.alpha_orbital_energy.round(5).T,
                                                (self.sorted_alphapop + self.sorted_betapop).round(3), axis=0)))
             remark_alpha = f"\n{self.xhf} Orbitals\n"
@@ -111,14 +121,14 @@ class MO(Load):
             self.spin = dict(zip(['Orbital Energy (Hartree)', 'Alpha', 'Beta'],
                                  [self.alpha_orbital_energy.flatten().round(5), alpha_spin, beta_spin]))
         elif self.xhf in ['RHF', 'ROHF', 'RCAS']:
-            results_alpha = dict(zip([('Orbital Energy', '(Hartree)')] + self.reduced_groups,
+            results_alpha = dict(zip([header] + self.reduced_groups,
                                      np.append(self.alpha_orbital_energy.round(5).T,self.sorted_alphapop.round(3), axis=0)))
             remark_alpha = f"\n{self.xhf} Orbitals\n"
         else:
-            results_alpha = dict(zip([('Orbital Energy', '(Hartree)')] + self.reduced_groups,
+            results_alpha = dict(zip([header] + self.reduced_groups,
                                      np.append(self.alpha_orbital_energy.round(5).T,self.sorted_alphapop.round(3), axis=0)))
             remark_alpha = f"\n{self.xhf} Alpha Orbitals\n"
-            results_beta = dict(zip([('Orbital Energy', '(Hartree)')] + self.reduced_groups,
+            results_beta = dict(zip([header] + self.reduced_groups,
                                     np.append(self.beta_orbital_energy.round(5).T,self.sorted_betapop.round(3), axis=0)))
             remark_beta = f"\n{self.xhf} Beta Orbitals\n"
 
