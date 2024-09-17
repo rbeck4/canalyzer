@@ -23,6 +23,8 @@ parser.add_argument("--groups", help='Dictionary of custom atom groupings or ran
                          C, F, Cl, Br, C, H, H, C, O, O, H
                          and you want to group the Halogens, Carbons, and Others.
                          --groups="{'Halogens':'[2:4]', 'Carbons':'[1:1,5:5,8:8]', 'Others':'[6:7,9:11]'}"
+                         
+            NatOrb - CI state which natural orbitals are generated from
 """
 parser.add_argument("--displaywidth", help='Display width of output file before skipping line', type=int)
 args: Namespace = parser.parse_args()
