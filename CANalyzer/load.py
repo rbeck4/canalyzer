@@ -314,8 +314,7 @@ class Load:
     def readlog_matrix(self, startstr, nrows, ncol, ifltt=False, ifantisymm=False, instance=1):
         # for files with multiple matrices with the same startstr, this pick which instance to read
         if instance == 1:
-            startline = int(str(subprocess.check_output(f"grep -n '{startstr}' {self.logfile}", shell=True)).split(" ")
-                        [0].split("'")[1].split(":")[0]) + 2
+            startline = int(str(subprocess.check_output(f"grep -n '{startstr}' {self.logfile}", shell=True)).split()[0].split("'")[1][:-1]) + 2
         elif instance > 1:
             grep_results = str(
                 subprocess.check_output(f"grep -n '{startstr}' {self.logfile}", shell=True)).split("\\n")
@@ -333,7 +332,6 @@ class Load:
 
         # initialize matrix
         matrix = np.zeros((nrows, ncol))
-
         # reading matrix
         #if ifltt:
         blocks = int(np.ceil(ncol / 5))
@@ -355,16 +353,18 @@ class Load:
                             xx = 0.0
                         linear2.append(xx)
                     except:
-                        pass
+                        linear2.append(x)
 
+                dump = linear2.pop(0)
                 try:
-                    dump = linear2.pop(0)
                     dump = int(dump - 1)
                 except:
-                    pass
+# catches the case where matrix rows are labeled by a/b
+# may be source of failure in the future if a/b is capitalized of L/S component is added
+                    fact = 2 - (ord(dump[-1]) - 96)
+                    dump = int(dump[:-1]) * 2 - fact - 1
 
                 startline += 1
-
                 for x in range(len(linear2)):
                     matrix[dump, x + col_offset] = linear2[x]
             if ifltt:
