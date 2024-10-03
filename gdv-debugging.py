@@ -2,8 +2,18 @@ from CANalyzer.load import Load
 from argparse import ArgumentParser, Namespace
 import numpy as np
 
-mat_string1 = "X2C Decoupling Derivative --- Imag --- Component:                         3"
-mat_string2 = "X(r) matrix derivatives for IMat=    3 (imaginary):"
+mat_string1 = "X2C Renormalization 1st Derivative (Real) Component:    1"
+mat_string2 = "R(r) matrix derivatives for IMat=    1 (real):"
+"""
+Numerical vs analytical derivative indexing:
+4 : 1    : xx
+5 : 2, 4 : xy, yx
+6 : 5    : yy
+7 : 3, 7 : xz, zx
+8 : 6, 8 : yz, zy
+9 : 9    : zz
+"""
+
 nrows = 44
 ncol = 44
 
@@ -23,16 +33,16 @@ job2.start()
 mat1 = job1.readlog_matrix(mat_string1, nrows, ncol)
 mat2 = job2.readlog_matrix(mat_string2, nrows, ncol)
 
-np.savetxt("mat1.csv", mat1, delimiter=",")
-np.savetxt("mat2.csv", mat2, delimiter=",")
-
 matsub = np.abs(mat1 - mat2)
 rms = np.sqrt(np.mean(np.multiply(matsub, matsub)))
 maximum = np.max(matsub)
 
 print("RMS Difference: ", rms)
 print("Max Difference: ", maximum, "Index: ", np.unravel_index(np.argmax(matsub, axis=None), matsub.shape))
-
+print("RMS Element Analytical: ", np.sqrt(np.mean(np.multiply(mat1, mat1))))
+print("Max Element Analytical: ", np.max(mat1))
+print("RMS Element Numerical: ", np.sqrt(np.mean(np.multiply(mat2, mat2))))
+print("Max Element Numerical: ", np.max(mat2))
 
 
 
