@@ -151,10 +151,10 @@ class Load:
             shell=True)).split(" ")[0].split("'")[1].split(":")[0]) + 2
         atomcount = 0
         while atomcount < self.natoms:
-            line = linecache.getline(self.logfile, basisstart).split(" ")
-            if line[1] in shells:
-                basis[atomcount].append(line[1])
-            if "****\n" in line:
+            line = linecache.getline(self.logfile, basisstart).split()
+            if line[0] in shells:
+                basis[atomcount].append(line[0])
+            if "****" in line:
                 atomcount += 1
             basisstart += 1
 
