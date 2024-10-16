@@ -63,6 +63,16 @@ elif args.jobtype == 'NatOrb':
     NatOrb = CANalyzer.natorb.NaturalOrbitals(args.log, args.fchk, filename, args.groups, displaywidth)
     NatOrb.start()
     NatOrb.compute_natorb()
+elif args.jobtype == 'MoveMO':
+    if not args.fchk2:
+        raise Exception("Set --fchk2 to target fchk")
+    from CANalyzer.load import Load
+    from CANalyzer.utilities import write_fchk
+    Data1 = Load(args.log, args.fchk, filename, args.groups, displaywidth)
+    Data1.start()
+    matsize = Data1.nbasis * Data1.nbsuse * Data1.ncomp * Data1.ncomp
+    mo = Data1.read_mo()
+    write_fchk("Alpha MO coefficients", Data1.nri, mo, matsize, Data1.fchkfile, args.fchk2)
 else:
     print("Invalid jobtype")
 
