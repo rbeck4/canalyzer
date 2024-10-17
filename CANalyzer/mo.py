@@ -6,7 +6,7 @@ import sys
 
 class MO(Load):
     def __init__(self, logfile, fchkfile, filename, groups, displaywidth, separate_ml):
-        Load.__init__(self, logfile, fchkfile, filename, groups, displaywidth)
+        super().__init__(logfile, fchkfile, filename, groups, displaywidth)
         self.moalpha = None
         self.mobeta = None
         self.overlap = None

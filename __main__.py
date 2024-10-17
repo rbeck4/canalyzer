@@ -65,7 +65,7 @@ elif args.jobtype == 'NatOrb':
     NatOrb.compute_natorb()
 elif args.jobtype == 'MoveMO':
     if not args.fchk2:
-        raise Exception("Set --fchk2 to target fchk")
+        raise Exception("Set target fchk with --fchk2")
     from CANalyzer.load import Load
     from CANalyzer.utilities import write_fchk
     Data1 = Load(args.log, args.fchk, filename, args.groups, displaywidth)
