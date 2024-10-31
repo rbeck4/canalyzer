@@ -2,221 +2,145 @@
 This is meant to be called as a library from a Jupyter notebook.
 """
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 import pandas as pd
+import matplotlib.colors as mcolors
 import subprocess
 import linecache
 from itertools import chain
 
 import CANalyzer.utilities
-from CANalyzer.mo import MO
 
-class Spectra(MO):
-    def __init__(self, logfile, fchkfile, groups, orbital_decomposition, separate_ml=False):
-        super().__init__(logfile, fchkfile, None, groups, None, None)
-        self.orbital_decomposition = orbital_decomposition
-        self.oscstr = []
-        """
-            TDDFT: self.oscstr is stored in excited state ordering
-            CI: self.oscstr is stored as a list ordered in a compound index that represents (from_state, to_state) 
-                where the from_state is the fast-running index; compound index can be obtained using self.ci_os_index() 
-        """
-        self.energy = []
-        """
-            TDDFT: self.energy stores excitation energies in eV
-            CI: self.energy stores raw energies in Hartree
-        """
-        self.jobtype = None
-        self.separate_ml = separate_ml
-        self.nstates = None
-        """
-            TDDFT: self.nstates is the number of excited states
-            CI: self.nstates is the number of total states
-        """
-        self.orbital_contributions = None
-        """
-            TDDFT: self.orbital_contributions is [[(from_mo, to_mo, contribution)] for each state]
-            CI: self.orbital_contributions is nstates x naorb matrix where elements are orbital occupation numbers
-        """
-        self.decomp_os = None
-        #self.spin = None
-        #self.plots = []
-        #"""
-        #    List of different plots using this data
-        #"""
+class Spectra():
+    def __init__(self):
+        self.figheight = 30
+        self.figwidth = 40
+        self.axiswidth = 10
+        self.majorxtick_fontsize = 75
+        self.majorytick_fontsize = 0
+        self.tickpad = 15
+        self.legend_font = 80
+        self.legend_ncol = 1
+        self.legend_colspacing = 1
+        self.x_decimal = 0
+        self.y_decimal = 0
+        self.xbins = None
+        self.ybins = None
+        self.display_xlim = None
+        self.display_ylim = None
+        self.linewidth = 10
+        self.colors = list(mcolors.CSS4_COLORS.keys())
+        self.labels = []
+        self.legend_loc = "upper left"
+        self.xlabel = "Energy (eV)"
+        self.ylabel = None
+        self.axislabel_font = 90
+        self.alpha = 0.5
 
+        self.redshift = 0
+        self.spectra_yscale = 1
+        self.sticks_yscale = 1
+        self.npoints = 5000
+        self.spectra = {}
+        self.exp_spectra = None
+        self.thresh = 1E-6
 
-    def start(self):
-        super().start()
-
-        while self.jobtype not in ["TDDFT", "CI", "EOMCC"]:
-            self.jobtype = input("TDDFT, CI, or EOMCC? ")
-
-            if self.jobtype == "TDDFT":
-                self.parse_tddft()
-            elif self.jobtype == "CI":
-                self.parse_ci()
+    def gaussian(self, energy, broadening, osc_str, xspace):
+        ones = np.ones(xspace.shape)
+        return (osc_str / (np.sqrt(2 * np.pi * broadening ** 2))) * np.exp(
+            -(xspace - ones * energy) ** 2 / (2 * broadening ** 2))
 
 
-    def parse_tddft(self):
-        if self.software == "GDV":
-            startline = int(
-                str(subprocess.check_output("grep -n 'Excited State' " + self.logfile, shell=True)).split()[
-                    0].split("'")[-1][:-1])
-            self.nstates = int(
-                str(subprocess.check_output("grep -n 'Excited State' " + self.logfile, shell=True)).split()[-8][:-1])
-            raw_orbital_contributions = [[] for i in range(self.nstates)]
-            self.orbital_contributions = [[] for i in range(self.nstates)]
-
-            statecounter = 1
-            current_state = 0
-            offswitch = True
-            while offswitch:
-                parseline = linecache.getline(self.logfile, startline)
-                if "Excited State" in parseline:
-                    splitline = parseline.split()
-                    current_state = int(splitline[2][:-1])
-                    self.energy.append(float(splitline[4]))
-                    self.oscstr.append(float(splitline[8].split("=")[1]))
-                    # state_spin = splitline[9].split("=")[1]
-                    statecounter += 1
-                elif "->" in parseline and self.orbital_decomposition:
-                    splitline = parseline.split()
-                    from_orbital = int(splitline[0])
-                    to_orbital = int(splitline[2])
-                    contribution = float(splitline[3])
-                    raw_orbital_contributions[current_state - 1].append([from_orbital, to_orbital, contribution])
-                elif '<-' in parseline and self.orbital_decomposition:
-                    splitline = parseline.split()
-                    from_orbital = int(splitline[0])
-                    to_orbital = int(splitline[2])
-                    contribution = float(splitline[3])
-                    raw_orbital_contributions[current_state - 1].append([from_orbital, to_orbital, contribution])
-
-                if statecounter > self.nstates:
-                    if "->" not in parseline and "<-" not in parseline and "Excited State" not in parseline:
-                        offswitch = False
-                startline += 1
-
-            if self.orbital_decomposition:
-                for i in range(len(raw_orbital_contributions)):
-                    state_contribution_list = raw_orbital_contributions[i]
-                    done_pairs = []
-                    unnormalized_contributions = []
-                    for pair_index in range(len(state_contribution_list)):
-                        current_pair = (state_contribution_list[pair_index][0], state_contribution_list[pair_index][1])
-                        contribution = np.abs(state_contribution_list[pair_index][2])
-
-                        if current_pair not in done_pairs:
-                            unnormalized_contributions.append(contribution)
-                            done_pairs.append(current_pair)
-
-                        elif current_pair in done_pairs:
-                            done_pair_index = done_pairs.index(current_pair)
-                            contribution += unnormalized_contributions[done_pair_index]
-                            unnormalized_contributions[done_pair_index] = contribution
-
-                    unnormalized_total_contribution = sum(unnormalized_contributions)
-                    normalized_contributions = [x / unnormalized_total_contribution for x in unnormalized_contributions]
-                    self.orbital_contributions[i] = [(done_pairs[j][0], done_pairs[j][1], normalized_contributions[j]) for j
-                                                     in range(len(done_pairs))]
-        elif self.software == "CQ":
-            raise Exception("NYI")
+    def lorentzian(self, energy, broadening, osc_str, xspace):
+        ones = np.ones(xspace.shape)
+        d = np.pi * (xspace - ones * energy) ** 2 + broadening ** 2
+        lorentzian = broadening / d
+        return osc_str * lorentzian
 
 
-    def parse_ci(self):
-        if self.software == "GDV":
-            energyline = str(subprocess.check_output("grep -n '(Hartree)' " + self.logfile, shell=True))
-            energyline_split = energyline.split("\\n")
-            self.energy = [float(x.split("(Hartree):")[-1]) for x in energyline_split[:-1]]
-            self.nstates = int(energyline_split[-2].split(":")[2].split()[0])
-            pdmdiag_list = []  # just 1PDM diagonals in MO basis
-            for i in range(self.nstates):
-                pdmdiag = self.readlog_matrix("For Simplicity", self.nstates, 1, instance=i+1).flatten()
-                pdmdiag_list.append(pdmdiag)
-            self.orbital_contributions = np.array(pdmdiag_list)
-
-            self.oscstr = []
-            oslines = str(subprocess.check_output("grep 'Oscillator Strength For States' " + self.logfile, shell=True)).split("\\n")[:-1]
-            oslines[0] = oslines[0].split("'")[-1]
-            for i in range(len(oslines)):
-                oscstr = float(oslines[i].split("f=")[-1])
-                self.oscstr.append(oscstr)
-
-        elif self.software == "CQ":
-            raise Exception("NYI")
-
-
-    def ci_os_index(self, from_state, to_state):
-        states_per_layers_before = [self.nstates - i for i in range(1, from_state)]
-        skip = sum(states_per_layers_before)
-        return skip + to_state - from_state - 1
-
-
-    def purge(self, threshold=1E-7):
-        dark_states = []
-        for i in range(self.nstates):
-            if self.oscstr[i] < threshold:
-                dark_states.append(i)
-        for i in sorted(dark_states, reverse=True):
-            del self.oscstr[i]
-            del self.energy[i]
-            if self.jobtype == "TDDFT":
-                del self.orbital_contributions[i]
-            elif self.jobtype == "CI":
-                self.orbital_contributions[i] = np.delete(self.orbital_contributions, i, axis=0)
-        ndark_state = len(dark_states)
-        self.nstates = self.nstates - ndark_state
-
-
-    def make_spectra(self, xstart, xend, os, broadening, lineshape=CANalyzer.utilities.lorentzian, npoints=5000):
+    def make_spectrum(self, title, xstart, xend, roots, os, broadening, lineshape=None):
         line_list = []
-        xspace = np.linspace(xstart, xend, npoints)
-        for i in range(self.nstates):
-            root = self.energy[i]
+        xspace = np.linspace(xstart, xend, self.npoints)
+        os_list = os
+        for i in range(os_list.shape[0]):
+            root = roots[i]
             oscstr = os[i]
+            if abs(oscstr) < self.thresh:
+                continue
             if root >= xstart and root <= xend:
-                line_list.append(lineshape(root, broadening, oscstr, xspace))
-        spectrum = np.zeros(npoints)
+                if lineshape:
+                    line_list.append(lineshape(root, broadening, oscstr, xspace))
+                else:
+                    line_list.append(self.lorentzian(root, broadening, oscstr, xspace))
+        spectrum = np.zeros(self.npoints)
         for i in line_list:
             spectrum += i
-        return xspace, spectrum
+        self.spectra[title] = spectrum
+        self.labels.append(title)
 
 
-    def decompose_os(self, occupied_groups, virtual_groups):
-        """
-        Decomposes oscillator strengths based on contribution from excitations between defined groups.
-        :param occupied_groups: Input groups of occupied orbitals as dict {"Name1" : range(start, end + 1)}
-        :param virtual_groups:
-        """
-        occupied_groups_keys = occupied_groups.keys()
-        virtual_groups_keys = virtual_groups.keys()
+    def read_exp_spectrum(self, csvfile, xlabel, ylabel):
+        exp_csv = pd.read_csv(csvfile)
+        exp_x = exp_csv[xlabel]
+        exp_y = exp_csv[ylabel]
+        self.exp_spectra = (exp_x, exp_y)
 
-        occupied_superrange = chain.from_iterable((occupied_groups[x] for x in occupied_groups_keys))
-        virtual_superrange = chain.from_iterable((virtual_groups[x] for x in virtual_groups_keys))
 
-        min_specified = min(list(occupied_superrange))
-        max_specified = max(list(virtual_superrange))
+    def plot(self, spectra_names, xstart, xend, plotname=None, colors=None, show=False):
+        plt.rc('axes', linewidth=self.axiswidth)
+        plt.rcParams["font.weight"] = "bold"
+        plt.rcParams["axes.labelweight"] = "bold"
 
-        occupied_groups["Other Occ"] = range(1, min_specified + 1)
-        virtual_groups["Other Virt"] = range(max_specified + 1, self.nbsuse)
+        fig, ax = plt.subplots()
+        fig.set_figwidth(self.figwidth)
+        fig.set_figheight(self.figheight)
+        fig.canvas.draw()
 
-        occupied_groups_keys = occupied_groups.keys()
-        virtual_groups_keys = virtual_groups.keys()
+        xspace = np.linspace(xstart, xend, self.npoints)
 
-        self.ex_categories_keys = [(x, y) for x in occupied_groups_keys for y in virtual_groups_keys]
-        self.ncat = len(self.ex_categories_keys)
-        self.decomp_os = np.zeros((self.nstates, self.ncat))
-        for state in range(self.nstates):
-            oscstr = self.oscstr[state]
-            excitations = self.orbital_contributions[state]
-            for pair in excitations:
-                from_mo, to_mo, contribution = pair
-                for icat in range(self.ncat):
-                    cat = self.ex_categories_keys[icat]
-                    from_range = occupied_groups[cat[0]]
-                    to_range = virtual_groups[cat[1]]
-                    if from_mo in from_range and to_mo in to_range:
-                        scaled_os = oscstr * contribution
-                        self.decomp_os[state, icat] = self.decomp_os[state, icat] + scaled_os
+        for i in range(len(spectra_names)):
+            s = spectra_names[i]
+            y = self.spectra[s]
+            ax.plot(xspace - self.redshift, y * self.spectra_yscale, label=s, alpha=self.alpha, linewidth=self.linewidth,
+                    color=self.colors[i])
+
+        if self.exp_spectra:
+            ax.plot(self.exp_spectra[0], self.exp_spectra[1], label="Exp", alpha=self.alpha, linewidth=self.linewidth,
+                    color=colors[s], linestyle='--')
+
+        ax.set_xlabel(self.xlabel, fontsize=self.axislabel_font, fontweight='bold')
+        if self.ylabel:
+            ax.set_ylabel(self.ylabel, fontsize=self.axislabel_font, fontweight='bold')
+
+        for tick in ax.xaxis.get_major_ticks():
+            tick.label1.set_fontsize(self.majorxtick_fontsize)
+            tick.label1.set_fontweight('bold')
+        for tick in ax.yaxis.get_major_ticks():
+            tick.label1.set_fontsize(self.majorytick_fontsize)
+            tick.label1.set_fontweight('bold')
+        ax.tick_params(axis='both', which='major', pad=self.tickpad)
+        ax.legend(loc=self.legend_loc, prop={'weight': 'bold', 'size': self.legend_font}, frameon=False,
+                  ncol=self.legend_ncol, columnspacing=self.legend_colspacing)
+        #ax.xaxis.set_major_formatter(mpl.ticker.StrMethodFormatter(f'{x:,.2f}'))
+        #ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter(f'{x:,.2f}'))
+        ax.yaxis.set_major_formatter(mpl.ticker.FormatStrFormatter(f'%.{self.y_decimal}f'))
+        ax.xaxis.set_major_formatter(mpl.ticker.FormatStrFormatter(f'%.{self.x_decimal}f'))
+
+        if self.xbins:
+            plt.locator_params(axis='x', nbins=self.xbins)
+        if self.ybins:
+            plt.locator_params(axis='y', nbins=self.ybins)
+
+        if self.display_xlim:
+            plt.xlim(self.display_xlim)
+        if self.display_ylim:
+            plt.ylim(self.display_ylim)
+
+        if plotname:
+            plt.savefig(plotname, dpi=200, format="png")
+
+        if show:
+            plt.show()
+
 

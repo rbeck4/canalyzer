@@ -70,67 +70,6 @@ def normalize_matrix(A):
     return A
 
 
-def gaussian(energy, broadening, osc_str, xspace):
-    import numpy as np
-    ones = np.ones(xspace.shape)
-    return (osc_str / (np.sqrt(2*np.pi*broadening**2))) * np.exp(-(xspace-ones*energy)**2/(2*broadening**2))
-
-
-def lorentzian(energy, broadening, osc_str, xspace):
-    import numpy as np
-    ones = np.ones(xspace.shape)
-    d = np.pi * (xspace - ones * energy) ** 2 + broadening ** 2
-    lorentzian = broadening / d
-    return osc_str * lorentzian
-
-
-"""
-def plot_spectra(x, y, colors, labels, alphas, roots=None, os=None, redshift=0, yscale=1, yscale_sticks=1):
-    import matplotlib.pyplot as plt
-    import matplotlib as mpl
-
-    fig, ax = plt.subplots()
-    fig.set_figheight(30)
-    fig.set_figwidth(40)
-    fig.canvas.draw()
-
-    plt.rc('axes', linewidth=10)
-    plt.rcParams["font.weight"] = "bold"
-    plt.rcParams["axes.labelweight"] = "bold"
-
-    for i in range(len(x)):
-        color = colors[i]
-        l = labels[i]
-        a = alphas[i]
-        ax.plot(x[i] - redshift, y[i] * yscale, c=color, label=l, alpha=a, linewidth=10)
-        if roots and os and roots[i]:
-            for n in range(len(roots[i])):
-                root = roots[i][n] - redshift
-                height = os[i][n]*yscale_sticks
-                ax.plot((root, root), (0, height), c=color, linewidth=10)
-
-    ax.set_xlabel('Energy (eV)', fontsize=90, fontweight='bold')
-    for tick in ax.xaxis.get_major_ticks():
-        tick.label1.set_fontsize(75)
-        tick.label1.set_fontweight('bold')
-    for tick in ax.yaxis.get_major_ticks():
-        tick.label1.set_fontsize(0)
-        tick.label1.set_fontweight('bold')
-    ax.tick_params(axis='both', which='major', pad=15)
-    ax.legend(fontsize=30, loc='upper left', prop={'weight': 'bold', 'size': 80}, frameon=False, ncol=1,
-              columnspacing=1)
-    ax.xaxis.set_major_formatter(mpl.ticker.StrMethodFormatter('{x:,.2f}'))
-    ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter('{x:,.2f}'))
-    ax.yaxis.set_major_formatter(mpl.ticker.FormatStrFormatter('%.2f'))
-    ax.xaxis.set_major_formatter(mpl.ticker.FormatStrFormatter('%.2f'))
-    plt.locator_params(axis='x', nbins=5)
-    plt.xlim(xstart, xend)
-    plt.show()
-"""
-
-
-
-
 c = 137.035999074
 
 
