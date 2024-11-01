@@ -129,16 +129,10 @@ class CI_spectra(Spectra, MO):
 
             while statecounter <= self.nstates - 1:
                 parseline = linecache.getline(self.logfile, startline_pdm).split()
-                print("statecounter initial", statecounter)
-                print(statecounter <= self.nstates - 1)
                 try:
                     if "State" in parseline[0]:
                         statecounter += 1
-                        print(parseline)
-                        print("statecounter final", statecounter)
                         occupation_numbers = [(int(x.split("(")[0]), float(x.split("(")[1][:-1])) for x in parseline[2:]]
-                        print(occupation_numbers)
-                        print("------------")
                         for n in occupation_numbers:
                             self.occnum[statecounter - 1, n[0] - 1] = n[1]
                         if statecounter == self.nstates:
@@ -148,10 +142,6 @@ class CI_spectra(Spectra, MO):
                         if lastcycle:
                             statecounter += 1
                         occupation_numbers = [(int(x.split("(")[0]), float(x.split("(")[1][:-1])) for x in parseline]
-                        print(parseline)
-                        print("statecounter final", statecounter)
-                        print(occupation_numbers)
-                        print("------------")
                         for n in occupation_numbers:
                             self.occnum[statecounter - 1, n[0] - 1] = n[1]
                 except:

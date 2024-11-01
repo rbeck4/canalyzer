@@ -107,7 +107,7 @@ class Spectra():
 
         if self.exp_spectra:
             ax.plot(self.exp_spectra[0], self.exp_spectra[1], label="Exp", alpha=self.alpha, linewidth=self.linewidth,
-                    color=colors[s], linestyle='--')
+                    color="black", linestyle='--')
 
         ax.set_xlabel(self.xlabel, fontsize=self.axislabel_font, fontweight='bold')
         if self.ylabel:
