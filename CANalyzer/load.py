@@ -427,7 +427,7 @@ class Load:
 
 
     def overlay_route(self, overlay):
-        line1 = str(subprocess.check_output(r"grep '\ " + f"{overlay}/' " + self.logfile, shell=True)).split()[1].split(",")
+        line1 = str(subprocess.check_output(r"grep '\ " + f"{overlay}/' " + self.logfile, shell=True)).split()[-1].split(",")
         line2 = [x.replace("=",":") for x in line1 if "=" in x]
         first = "{" + line2[0].split("/")[1]
         last = line2[-1].split("/")[0] + "}"
