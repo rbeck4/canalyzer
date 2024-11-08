@@ -2,6 +2,7 @@ import numpy as np
 import subprocess
 import linecache
 from itertools import chain
+import matplotlib.pyplot as plt
 
 from CANalyzer.spectra import Spectra
 from CANalyzer.mo import MO
@@ -181,3 +182,24 @@ class TDDFT_spectra(Spectra, MO):
                     if from_mo in from_range and to_mo in to_range:
                         scaled_os = oscstr * contribution
                         self.decomp_byexcat[root, icat] = self.decomp_byexcat[root, icat] + scaled_os
+
+
+    def plot(self, spectra_names, xstart, xend, plotname=None, vline=None, ifsticks=True, stick_color="black", sticks=None):
+        fig, ax = super().plot(spectra_names, xstart, xend, None, False, vline)
+        if ifsticks:
+            if sticks is None:
+                sticks = self.energy
+
+            for n in range(self.nroots):
+                height = self.oscstr[n]*self.sticks_yscale
+                root = sticks[n] - self.redshift
+                ax.plot((root, root), (0, height), c=stick_color, linewidth=self.linewidth, alpha=self.alpha)
+
+        if plotname:
+            plt.savefig(plotname, dpi=200, format="png", bbox_inches='tight')
+
+        plt.show()
+
+
+
+
