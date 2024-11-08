@@ -87,7 +87,7 @@ class Spectra():
         self.exp_spectra = (exp_x, exp_y)
 
 
-    def plot(self, spectra_names, xstart, xend, plotname=None, colors=None, show=False):
+    def plot(self, spectra_names, xstart, xend, plotname=None, show=False, vline=None):
         plt.rc('axes', linewidth=self.axiswidth)
         plt.rcParams["font.weight"] = "bold"
         plt.rcParams["axes.labelweight"] = "bold"
@@ -108,6 +108,17 @@ class Spectra():
         if self.exp_spectra:
             ax.plot(self.exp_spectra[0], self.exp_spectra[1], label="Exp", alpha=self.alpha, linewidth=self.linewidth,
                     color="black", linestyle='--')
+
+        if vline and self.display_ylim:
+            try:
+                try:
+                    for x in vline:
+                        ax.vlines(x, self.display_ylim[0]*self.spectra_yscale, self.display_ylim[1]*self.spectra_yscale, colors="gray", linestyle='--', linewidth=self.linewidth)
+                except:
+                    ax.vlines(vline, self.display_ylim[0]*self.spectra_yscale, self.display_ylim[1]*self.spectra_yscale, colors="gray", linestyle='--', linewidth=self.linewidth)
+            except:
+                print("Invalid argument for vline. Must be float, int, or list of floats ort ints.")
+                pass
 
         ax.set_xlabel(self.xlabel, fontsize=self.axislabel_font, fontweight='bold')
         if self.ylabel:
@@ -138,9 +149,11 @@ class Spectra():
             plt.ylim(self.display_ylim)
 
         if plotname:
-            plt.savefig(plotname, dpi=200, format="png")
+            plt.savefig(plotname, dpi=200, format="png", bbox_inches='tight')
 
         if show:
             plt.show()
+
+        return fig, ax
 
 

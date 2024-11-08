@@ -346,6 +346,22 @@ class Load:
                     matrixline = matrixline.replace('d', 'e')
 
                 matrixlist = matrixline.split()
+
+# try to catch if first element has row index up against first matrix value
+                catch1 = len(matrixlist[0].split("-"))
+                if catch1 in [2, 3]:
+                    try:
+                        firstelement_split = matrixlist[0].split("a")
+                        matrixlist[0] = float(firstelement_split[-1])
+                        matrixlist.insert(0, firstelement_split[0] + "a")
+                    except:
+                        firstelement_split = matrixlist[0].split("b")
+                        matrixlist[0] = float(firstelement_split[-1])
+                        matrixlist.insert(0, firstelement_split[0] + "b")
+                elif catch1 not in [1, 2, 3]:
+                    raise Exception("Something is wrong in reading matrices from log. Parsing exception not caught.")
+
+
                 for x in matrixlist:
                     try:
                         xx = float(x)
@@ -361,8 +377,15 @@ class Load:
                 except:
 # catches the case where matrix rows are labeled by a/b
 # may be source of failure in the future if a/b is capitalized of L/S component is added
-                    fact = 2 - (ord(dump[-1]) - 96)
-                    dump = int(dump[:-1]) * 2 - fact - 1
+                    try:
+                        fact = 2 - (ord(dump[-1]) - 96)
+                        dump = int(dump[:-1]) * 2 - fact - 1
+                    except:
+# trying to catch case where there is no space between label and matrix element due to very large basis
+# need to implement this for case where a/b are not in the row labels
+                        dump2 = dump.split("-")
+                        fact = 2 - (ord(dump2[-1]) - 96)
+                        dump = int(dump[:-1]) * 2 - fact - 1
 
                 startline += 1
                 for x in range(len(linear2)):

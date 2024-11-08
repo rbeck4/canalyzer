@@ -4,6 +4,9 @@ import linecache
 
 from CANalyzer.spectra import Spectra
 from CANalyzer.mo import MO
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+
 class CI_spectra(Spectra, MO):
     def __init__(self, logfile, fchkfile, groups, orbital_decomposition=True, separate_ml=False):
         MO.__init__(self, logfile, fchkfile, None, groups, None, separate_ml)
@@ -62,6 +65,9 @@ class CI_spectra(Spectra, MO):
         # numfromstates x nstates matrix where element (i, j) is the oscillator strength between states i and j
         # oscillator strengths between from states are not populated and remain zero
         # indexing is offset by 1 because output file state indexing starts at 1 and Python starts at 0
+
+        self.num_ex_electrons = None
+        # number of electrons excited compared between from and to state
 
         super().start()
         self.parse_ci()
@@ -163,10 +169,10 @@ class CI_spectra(Spectra, MO):
             for j in range(self.nstates):
                 electron_pop_change[i, j, :] = self.occnum[j, :] - self.occnum[i, :]
 
-        num_ex_electrons = np.zeros((self.numfromstates, self.nstates))
+        self.num_ex_electrons = np.zeros((self.numfromstates, self.nstates))
         for i in range(self.numfromstates):
             for j in range(self.nstates):
-                num_ex_electrons[i, j] = np.sum(np.abs(electron_pop_change[i, j, :])) / 2
+                self.num_ex_electrons[i, j] = np.sum(np.abs(electron_pop_change[i, j, :])) / 2
 
         for n in range(self.numfromstates):
             for nspace in range(self.nspaces):
@@ -174,13 +180,13 @@ class CI_spectra(Spectra, MO):
                 space_start = self.spaces[space_name][0] - 1
                 space_end = self.spaces[space_name][1]
                 for state in range(self.numfromstates, self.nstates):
-                    if num_ex_electrons[n, state] < 0.6:
+                    if self.num_ex_electrons[n, state] < 0.6:
                         print(f"States {n+1} and {state+1} has nearly the same electron occupation. ")
-                        if num_ex_electrons[n, state] < 0.01:
+                        if self.num_ex_electrons[n, state] < 0.01:
                             print(f"Omitting contributions from this excitation. Beware of results.")
                             continue
                     pop_change = np.sum(electron_pop_change[n, state, space_start:space_end])
-                    scaling = pop_change / num_ex_electrons[n, state]
+                    scaling = pop_change / self.num_ex_electrons[n, state]
                     self.decomp_byspaces[n, state, nspace] = scaling * self.oscstr[n, state]
 
 
