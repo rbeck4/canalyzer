@@ -17,7 +17,7 @@ class Harmonics(Load):
     def start(self):
         super().start()
 
-        self.geometry = self.readfchk_matrix(r"Current cartesian coordinates", 3, self.natoms).T * 1.8897259886
+        self.geometry = self.readfchk_matrix(r"Current cartesian coordinates", 3, self.natoms).T / 1.8897259886
         self.nmodes = int(str(subprocess.check_output(f"grep 'Number of Normal Modes' {self.fchkfile}", shell=True)).split("\\")[-2].split()[-1])
 
         self.normalmodes = self.readfchk_matrix(r"Vib-Modes", self.natoms*3*self.nmodes, 1)
