@@ -12,7 +12,6 @@ class Harmonics(Load):
         self.normalmodes = None # rank-3 tensor with indices (mode, atom, xyz)
         self.geometry = None
         self.nmodes = None
-        self.linear = True
 
 
     def start(self):
@@ -23,6 +22,10 @@ class Harmonics(Load):
 
         self.normalmodes = self.readfchk_matrix(r"Vib-Modes", self.natoms*3*self.nmodes, 1)
         self.normalmodes = np.reshape(self.normalmodes, (self.nmodes, self.natoms, 3))
+
+
+    def distort(self, mode, amount):
+        return self.geometry + amount * self.normalmodes[mode, :, :]
 
 
     """def pca_normalmodes(self, weight):
