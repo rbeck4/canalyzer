@@ -25,7 +25,7 @@ class Harmonics(Load):
 
 
     def distort(self, mode, amount):
-        return self.geometry + amount * self.normalmodes[mode-1, :, :]
+        return self.geometry + amount * self.normalmodes[mode, :, :]
 
 
     """def pca_normalmodes(self, weight):
