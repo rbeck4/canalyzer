@@ -37,7 +37,8 @@ class TDDFT_spectra(Spectra, MO):
         # number of non-zero oscillator strengths
 
         self.orbital_contributions = None
-        # (i, j, k) where i is the leaving orbital, j is the arriving orbital, and k is the oscillator strength contributed by i -> j
+        # [[(i, j, k)]] where i is the leaving orbital, j is the arriving orbital, and k is the oscillator strength contributed by i -> j
+        # there is one sublist of each excited state, ordered by excited state ordering.
 
         self.ncat = None
         # number of excitation categories
