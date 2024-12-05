@@ -49,6 +49,8 @@ class TDDFT_spectra(Spectra, MO):
         self.energy = []
         # excitation energies
 
+        self.spin = []
+
         super().start()
         self.parse_tddft()
 
@@ -74,7 +76,7 @@ class TDDFT_spectra(Spectra, MO):
                     current_state = int(splitline[2][:-1])
                     self.energy.append(float(splitline[4]))
                     self.oscstr.append(float(splitline[8].split("=")[1]))
-                    # state_spin = splitline[9].split("=")[1]
+                    self.spin.append(splitline[9].split("=")[1])
                     statecounter += 1
                 elif "->" in parseline and self.orbital_decomposition:
                     splitline = parseline.split()
