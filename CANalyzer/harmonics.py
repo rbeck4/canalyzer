@@ -29,9 +29,9 @@ class Harmonics(Load):
             raise Exception("Inconsistent mode and amount length")
 
         if geometry:
-            new_geometry = self.geometry.copy()
-        else:
             new_geometry = geometry
+        else:
+            new_geometry = self.geometry.copy()
 
         if type(mode) == int:
             new_geometry += amount * self.normalmodes[mode, :, :]
