@@ -9,7 +9,7 @@ from CANalyzer.utilities import write_fchk, eig
 
 class NaturalOrbitals(Load):
     def __init__(self, logfile, fchkfile, filename, states, displaywidth):
-        Load.__init__(self, logfile, fchkfile, filename, None, displaywidth)
+        super().__init__(logfile, fchkfile, filename, None, displaywidth)
         self.MO = None
         self.niorb = None
         self.naorb = None
@@ -18,19 +18,27 @@ class NaturalOrbitals(Load):
 
 
     def start(self):
-        self.parse_constants_gdv()
-        self.parse_log()
+        super().start()
 
-        # getting number of active orbitals
-        line = str(subprocess.check_output("grep 'NAOrb=' " + self.logfile, shell=True)).split(" ")
-        refine_line = []
-        for l in line:
-            try:
-                refine_line.append(int(l))
-            except:
-                pass
-        self.niorb = refine_line[1]
-        self.naorb = refine_line[2]
+        if self.software == "GDV":
+            # getting number of active orbitals
+            line = str(subprocess.check_output("grep 'NAOrb=' " + self.logfile, shell=True)).split(" ")
+            refine_line = []
+            for l in line:
+                try:
+                    refine_line.append(int(l))
+                except:
+                    pass
+            self.niorb = refine_line[1]
+            self.naorb = refine_line[2]
+
+
+
+        elif self.software == "CQ":
+            self.niorb = int(str(subprocess.check_output("grep 'Number of Inactive Core Orbitals:' " + self.logfile, shell=True)).split()[-1].split("\\")[0])
+            self.naorb = int(str(subprocess.check_output("grep 'Number of Correlated Orbitals:' " + self.logfile, shell=True)).split()[-1].split("\\")[0])
+            print(self.naorb, self.niorb)
+            exit()
 
         # defining states of interest
         if self.states:
@@ -41,7 +49,7 @@ class NaturalOrbitals(Load):
                     refine_soi.append(int(i))
                 except:
                     bounds = i.split('-')
-                    for j in range(int(bounds[0]), int(bounds[1])+1):
+                    for j in range(int(bounds[0]), int(bounds[1]) + 1):
                         refine_soi.append(j)
             refine_soi.sort()
             self.states = refine_soi
@@ -55,9 +63,12 @@ class NaturalOrbitals(Load):
     def compute_natorb(self):
         pdm = None
         for istate in self.states:
-            real_pdm = self.readlog_matrix("1PDM Matrix (real):", self.naorb, self.naorb, instance=istate)
-            imag_pdm = self.readlog_matrix("1PDM Matrix (imag):", self.naorb, self.naorb, instance=istate)
-            pdm = real_pdm + 1j*imag_pdm
+            if self.software == "GDV":
+                real_pdm = self.readlog_matrix("1PDM Matrix (real):", self.naorb, self.naorb, instance=istate)
+                imag_pdm = self.readlog_matrix("1PDM Matrix (imag):", self.naorb, self.naorb, instance=istate)
+                pdm = real_pdm + 1j*imag_pdm
+            elif self.software == "CQ":
+
             noon, no_transform = eig(pdm)
 
             acMO = self.MO[:, self.niorb:self.niorb+self.naorb]
