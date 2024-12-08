@@ -38,6 +38,8 @@ class Harmonics(Load):
         elif type(mode) == list:
             for i in range(len(mode)):
                 m = mode[i]
+                print(amount[i])
+                print(self.normalmodes[m, :, :].shape)
                 new_geometry += amount[i] * self.normalmodes[m, :, :]
 
         return new_geometry
