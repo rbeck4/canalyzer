@@ -24,8 +24,23 @@ class Harmonics(Load):
         self.normalmodes = np.reshape(self.normalmodes, (self.nmodes, self.natoms, 3))
 
 
-    def distort(self, mode, amount):
-        return self.geometry + amount * self.normalmodes[mode, :, :]
+    def distort(self, mode, amount, geometry):
+        if type(mode) != type(amount) or len(mode) != len(amount):
+            raise Exception("Inconsistent mode and amount length")
+
+        if geometry:
+            new_geometry = self.geometry.copy()
+        else:
+            new_geometry = geometry
+
+        if type(mode) == int:
+            new_geometry += amount * self.normalmodes[mode, :, :]
+        elif type(mode) == list:
+            for i in range(len(mode)):
+                m = mode[i]
+                new_geometry += amount[i] * self.normalmodes[m, :, :]
+
+        return new_geometry
 
 
     """def pca_normalmodes(self, weight):
