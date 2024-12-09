@@ -4,24 +4,32 @@ import pandas as pd
 from CANalyzer.load import Load
 import CANalyzer.utilities as util
 import subprocess
+from math import factorial
 
 class Harmonics(Load):
     def __init__(self, logfile, fchkfile):
-        super().__init__(logfile, fchkfile, None, None, None)
+        Load.__init__(self, logfile, fchkfile, None, None, None)
         #Load.__init__(self, logfile, fchkfile, None, None, None)
         self.normalmodes = None # rank-3 tensor with indices (mode, atom, xyz)
         self.geometry = None
         self.nmodes = None
+        self.harmonic_data = None
+        # 4 x nmodes: row 0 frequency (au), row 1 reduced mass (au), row 2 force constant (au), row 3 IR Intensity (km/mol)
 
 
     def start(self):
         super().start()
 
-        self.geometry = self.readfchk_matrix(r"Current cartesian coordinates", 3, self.natoms).T / 1.8897259886
+        self.geometry = self.readfchk_matrix(r"Current cartesian coordinates", 3, self.natoms).T / 1.88972612457
         self.nmodes = int(str(subprocess.check_output(f"grep 'Number of Normal Modes' {self.fchkfile}", shell=True)).split("\\")[-2].split()[-1])
 
         self.normalmodes = self.readfchk_matrix(r"Vib-Modes", self.natoms*3*self.nmodes, 1)
         self.normalmodes = np.reshape(self.normalmodes, (self.nmodes, self.natoms, 3))
+
+        self.harmonic_data = self.readfchk_matrix(r"Vib-E2", 4, self.nmodes)
+        self.harmonic_data[0, :] = self.harmonic_data[0, :] * 220000
+        self.harmonic_data[1, :] = self.harmonic_data[1, :] * 1822.8885
+        self.harmonic_data[2, :] = self.harmonic_data[2, :] * 0.0642199266
 
 
     def distort(self, mode, amount, geometry=None):
@@ -41,6 +49,48 @@ class Harmonics(Load):
                 new_geometry += amount[i] * self.normalmodes[m, :, :]
 
         return new_geometry
+
+
+    def harmonic_wavefunction(self, mode, v=0):
+        redmass = self.harmonic_data[1, mode]
+        freq = self.harmonic_data[0, mode]
+        factor = (1 / (factorial(v)*2**v)) * (redmass*freq/np.pi)**(0.25)
+        hermite = self.hermite_polynomial(v)
+
+        def wavefunction(x):
+            return factor*np.exp(-redmass*freq*x**2/2)*hermite(np.sqrt(redmass*freq)*x)
+
+        return wavefunction
+
+
+    def hermite_polynomial(self, n):
+        # returns a function that is the n-order Hermite polynomial
+        def hnm2(x):
+            return 1
+
+        def hnm1(x):
+            return x
+
+        if n == 0:
+            return hnm2
+        elif n == 1:
+            return hnm1
+        else:
+            counter = 2
+            while counter <= n:
+                def hn(x):
+                    return hnm1(x) - hnm2(x)
+
+                if counter == n:
+                    return hn
+                else:
+                    hnm2 = hnm1
+                    hnm1 = hn
+                    counter += 1
+
+
+
+
 
 
     """def pca_normalmodes(self, weight):
