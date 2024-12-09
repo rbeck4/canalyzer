@@ -69,7 +69,7 @@ class Harmonics(Load):
             return 1
 
         def hnm1(x):
-            return x
+            return 2*x
 
         if n == 0:
             return hnm2
@@ -79,7 +79,7 @@ class Harmonics(Load):
             counter = 2
             while counter <= n:
                 def hn(x):
-                    return hnm1(x) - hnm2(x)
+                    return 2*x*hnm1(x) - 2*(counter-1)*hnm2(x)
 
                 if counter == n:
                     return hn
