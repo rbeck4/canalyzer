@@ -451,7 +451,8 @@ class Load:
 
 
     def overlay_route(self, overlay):
-        line1 = str(subprocess.check_output(r"grep '\ " + f"{overlay}/' " + self.logfile, shell=True)).split()[-1].split(",")
+        reflineno = int(str(subprocess.check_output(r"grep -n 'RESTRICTED RIGHTS LEGEND' " + self.logfile, shell=True)).split("'")[1].split(":")[0])
+        line1 = str(subprocess.check_output(f"sed -n '{reflineno},{reflineno+1000}p' {self.logfile} | grep '\ {overlay}/'", shell=True)).split()[-1].split(",")
         line2 = [x.replace("=",":") for x in line1 if "=" in x]
         first = "{" + line2[0].split("/")[1]
         last = line2[-1].split("/")[0] + "}"
