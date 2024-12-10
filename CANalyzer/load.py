@@ -430,7 +430,8 @@ class Load:
                     pass
             startline += 1
 
-        rawmatrix = np.array(rawmatrix)
+        rawmatrix = np.array(rawmatrix)[:matrixsize]
+
         if self.nri == 2 and not realonly:
             real_matrix = rawmatrix[::2].reshape((ncol, nrows)).T
             imag_matrix = rawmatrix[1::2].reshape((ncol, nrows)).T
