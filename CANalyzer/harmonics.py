@@ -36,6 +36,7 @@ class Harmonics(Load):
 
 
     def distort(self, mode, amount, geometry=None):
+        # bug here not allowing ints as argument
         if type(mode) != type(amount) or len(mode) != len(amount):
             raise Exception("Inconsistent mode and amount length")
 
