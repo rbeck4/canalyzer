@@ -12,6 +12,12 @@ parser.add_argument('jobtype', help='Type of job to perform', type=str)
     jobtype: MOAnalyzer - provides AO contribution to MOs partitioned by angular momentum and atom (groups of atoms)
              Projection - Provides projection of MOs in fchk onto MOs in fchk2 (Only for Gaussian)
              NatOrb - Computes natural orbitals and stores it into a new fchk (Only for Gaussian)
+             SwapMO - Moves MO ordering
+             MoveMO - Move MOs stored in CQ/GDV bin/fchk to GDV/CQ fchk/bin
+                    - CQ -> GDV creates a new fchk
+                    - GDV -> CQ overwrites input bin
+                    - make sure that basis, geometry, complex/real, R/U/GHF is consistent between jobs
+                    - NYI for UHF 
 """
 parser.add_argument('--log', help='Full directory path to log file or out file', type=str)
 parser.add_argument('--fchk', help='Full directory path to fchk or bin file', type=str)
