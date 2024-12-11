@@ -1,8 +1,10 @@
 from argparse import ArgumentParser, Namespace
 import os
+import ast
 import CANalyzer.mo
 import CANalyzer.projection
 import CANalyzer.natorb
+import CANalyzer.transfer
 
 parser = ArgumentParser()
 parser.add_argument('jobtype', help='Type of job to perform', type=str)
@@ -27,6 +29,7 @@ parser.add_argument("--groups", help='Dictionary of custom atom groupings or ran
             NatOrb - CI state which natural orbitals are generated from
 """
 parser.add_argument("--displaywidth", help='Display width of output file before skipping line', type=int)
+parser.add_argument("--swaps", help='List of tuples of MO indices to swap', type=str)
 args: Namespace = parser.parse_args()
 
 # setting defaults
@@ -38,7 +41,7 @@ if args.filename:
 if args.displaywidth:
     displaywidth = args.displaywidth
 else:
-    displaywidth = 100000
+    displaywidth = None
 
 # running jobs
 if args.jobtype == "MOAnalyzer":
@@ -63,18 +66,13 @@ elif args.jobtype == 'NatOrb':
     NatOrb = CANalyzer.natorb.NaturalOrbitals(args.log, args.fchk, filename, args.groups, displaywidth)
     NatOrb.start()
     NatOrb.compute_natorb()
+elif args.jobtype == 'SwapMO':
+    swaps = ast.literal_eval(args.swaps)
+    MoveMO = CANalyzer.transfer.Tranfer(args.log, args.fchk, args.log2, args.fchk2)
+    MoveMO.swapmo(swaps)
 elif args.jobtype == 'MoveMO':
-    if not args.fchk2:
-        raise Exception("Set target fchk with --fchk2")
-    from CANalyzer.load import Load
-    from CANalyzer.utilities import write_fchk
-    Data1 = Load(args.log, args.fchk, filename, args.groups, displaywidth)
-    Data1.start()
-    matsize = Data1.nbasis * Data1.nbsuse * Data1.ncomp * Data1.ncomp
-    moa, mob = Data1.read_mo()
-    write_fchk("Alpha MO coefficients", Data1.nri, moa, matsize, Data1.fchkfile, args.fchk2)
-    if Data1.xhf == "UHF":
-        write_fchk("Beta MO coefficients", Data1.nri, mob, matsize, Data1.fchkfile, args.fchk2)
+    MoveMO = CANalyzer.transfer.Tranfer(args.log, args.fchk, args.log2, args.fchk2)
+    MoveMO.movemo()
 else:
     print("Invalid jobtype")
 

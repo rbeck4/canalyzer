@@ -6,7 +6,7 @@ import ast
 import h5py
 
 class Load:
-    def __init__(self, logfile, fchkfile, filename, groups, displaywidth):
+    def __init__(self, logfile, fchkfile, filename=None, groups=None, displaywidth=100000):
         self.software = None
         self.logfile = logfile
         self.fchkfile = fchkfile
@@ -556,7 +556,7 @@ class Load:
                 atomcount += 1
             else:
                 oam = line[18]
-                str_ml = line[19] + line[20]
+                str_ml = (line[19] + line[20]).strip()
                 try:
                     ml = int(str_ml)
                 except:
@@ -576,6 +576,13 @@ class Load:
         for i in range(self.natoms):
             for j in basis[i]:
                 self.subshell.append((i+1, self.atoms[i], j[0], j[1]))
+
+
+    def writebin_matrix(self, h5path, matrix):
+        f = h5py.File(self.fchkfile, "r+")
+        data = f[h5path]
+        data[...] = matrix
+        f.close()
 
 
     def start(self):
