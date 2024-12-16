@@ -91,20 +91,17 @@ class Tranfer():
             n += 2*oam + 1
 
         moa, mob = self.fromjob.read_mo()
+        reorder_list = [p for p in range(self.fromjob.nbasis)]
 
         if self.fromjob.software == "CQ" and self.tojob.software == "GDV":
-            oldrows = [np.copy(moa[p[0], :]) for p in swap_pairs]
+            for p in swap_pairs:
+                old = p[0]
+                new = p[1]
+                reorder_list[old] = new
+            moa = moa[reorder_list, :]
+ 
             if self.fromjob.ncomp == 2:
-                oldrows_b = [np.copy(mob[p[0], :]) for p in swap_pairs]
-
-            for p in range(len(swap_pairs)):
-                oldrow_index = swap_pairs[p][0]
-                newrow_index = swap_pairs[p][1]
-                moa[newrow_index, :] = oldrows[p]
-                if self.fromjob.ncomp == 2:
-                    mob[newrow_index, :] = oldrows_b[p]
-
-            if self.fromjob.ncomp == 2:
+                mob = mob[reorder_list, :]
                 new_mo = np.zeros(
                     (self.fromjob.nbasis * self.fromjob.ncomp, self.fromjob.nbsuse * self.fromjob.ncomp), dtype=np.complex128)
                 for i in range(self.fromjob.nbasis):
@@ -122,19 +119,17 @@ class Tranfer():
                             self.tojob.fchkfile, "target.fchk")
 
         elif self.fromjob.software == "GDV" and self.tojob.software == "CQ":
-            oldrows = [np.copy(moa[p[1], :]) for p in swap_pairs]
-            if self.fromjob.ncomp == 2:
-                oldrows_b = [np.copy(mob[p[1], :]) for p in swap_pairs]
-            for row in range(len(swap_pairs)):
-                newrow = swap_pairs[row][0]
-                moa[newrow, :] = oldrows[row]
-                if self.fromjob.ncomp == 2:
-                    mob[newrow, :] = oldrows_b[row]
+            for p in swap_pairs:
+                old = p[1]
+                new = p[0]
+                reorder_list[old] = new
+            moa = moa[reorder_list, :]
 
             if self.fromjob.ncomp == 2:
+                mob = mob[reorder_list, :]
                 new_mo = np.zeros(
                     (self.fromjob.nbasis * self.fromjob.ncomp, self.fromjob.nbsuse * self.fromjob.ncomp), dtype=np.complex128)
-                new_mo[0:self.fromjob.nbasis, :] = moa
+                new_mo[:self.fromjob.nbasis, :] = moa
                 new_mo[self.fromjob.nbasis:, :] = mob
 
             elif self.fromjob.ncomp == 4:

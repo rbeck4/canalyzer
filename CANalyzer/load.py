@@ -165,12 +165,18 @@ class Load:
                     l = int(util.OAM[ss])
                     multiplicity = 2 * l + 1
                     ml = []
-                    for i in range(l+1):
-                        if i == 0:
-                            ml.append(i)
-                        else:
-                            ml.append(i)
-                            ml.append(-i)
+                    if l != 1:
+                        for i in range(l+1):
+                            if i == 0:
+                                ml.append(i)
+                            else:
+                                ml.append(i)
+                                ml.append(-1)
+                    elif l == 1:
+                        ml.append(1)
+                        ml.append(-1)
+                        ml.append(0)
+
                     for i in range(multiplicity):
                         new_basis.append((a+1, self.atoms[a], ss, ml[i]))
                 else:
@@ -199,7 +205,6 @@ class Load:
     def read_overlap(self):
         if self.software == 'CQ':
             overlap = self.readbin_matrix("/INTS/OVERLAP")
-            pass
         else:
             overlap = self.readlog_matrix(r"\*\*\* Overlap \*\*\*", self.nbasis, self.nbasis, True,False)
         return overlap
@@ -452,7 +457,7 @@ class Load:
 
     def overlay_route(self, overlay):
         reflineno = int(str(subprocess.check_output(r"grep -n 'RESTRICTED RIGHTS LEGEND' " + self.logfile, shell=True)).split("'")[1].split(":")[0])
-        line1 = str(subprocess.check_output(f"sed -n '{reflineno},{reflineno+1000}p' {self.logfile} | grep '\ {overlay}/'", shell=True)).split()[-1].split(",")
+        line1 = str(subprocess.check_output(f"sed -n '{reflineno},{reflineno+1000}p' {self.logfile} | grep '\\ {overlay}/'", shell=True)).split()[-1].split(",")
         line2 = [x.replace("=",":") for x in line1 if "=" in x]
         first = "{" + line2[0].split("/")[1]
         last = line2[-1].split("/")[0] + "}"
@@ -579,7 +584,7 @@ class Load:
 
 
     def writebin_matrix(self, h5path, matrix):
-        f = h5py.File(self.fchkfile, "r+")
+        f = h5py.File(self.fchkfile, "a")
         data = f[h5path]
         data[...] = matrix
         f.close()
