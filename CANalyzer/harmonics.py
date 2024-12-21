@@ -56,6 +56,7 @@ class Harmonics(Load):
 
 
     def harmonic_wavefunction(self, mode, v=0):
+        # Returned wave function input must be in Bohr
         redmass = self.harmonic_data[mode, 1]
         freq = self.harmonic_data[mode, 0]
         if freq <= 0:

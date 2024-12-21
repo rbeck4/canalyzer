@@ -65,10 +65,8 @@ class Tranfer():
         if self.fromjob.nri != self.tojob.nri or self.fromjob.ncomp != self.tojob.ncomp:
             raise Exception("To and from jobs must be same component and real/complex.")
 
-        print("CQ")
-        print(self.fromjob.subshell)
-        print("GDV")
-        print(self.tojob.subshell)
+        for i in range(self.fromjob.nbasis):
+            print(f"index: {i}    from {self.fromjob.software}:    {self.fromjob.subshell[i]}    to {self.tojob.software}:    {self.tojob.subshell[i]}")
 
         swap_pairs = []
         n = 0
@@ -90,6 +88,8 @@ class Tranfer():
 
             n += 2*oam + 1
 
+        for i in range(len(swap_pairs)):
+            print(f"{swap_pairs[i]}")
         moa, mob = self.fromjob.read_mo()
         reorder_list = [p for p in range(self.fromjob.nbasis)]
 
@@ -97,7 +97,7 @@ class Tranfer():
             for p in swap_pairs:
                 old = p[0]
                 new = p[1]
-                reorder_list[old] = new
+                reorder_list[new] = old
             moa = moa[reorder_list, :]
  
             if self.fromjob.ncomp == 2:
@@ -122,8 +122,10 @@ class Tranfer():
             for p in swap_pairs:
                 old = p[1]
                 new = p[0]
-                reorder_list[old] = new
+                reorder_list[new] = old
             moa = moa[reorder_list, :]
+
+            print(reorder_list)
 
             if self.fromjob.ncomp == 2:
                 mob = mob[reorder_list, :]
