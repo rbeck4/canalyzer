@@ -16,10 +16,11 @@ class NaturalOrbitals(Load):
         self.nstates = None
         self.states = states
 
+        self.start()
+
 
     def start(self):
-        self.parse_constants_gdv()
-        self.parse_log()
+        super().start()
 
         # getting number of active orbitals
         line = str(subprocess.check_output("grep 'NAOrb=' " + self.logfile, shell=True)).split(" ")
