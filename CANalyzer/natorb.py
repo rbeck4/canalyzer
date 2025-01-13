@@ -16,8 +16,6 @@ class NaturalOrbitals(Load):
         self.nstates = None
         self.states = states
 
-        self.start()
-
 
     def start(self):
         super().start()

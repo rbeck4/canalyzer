@@ -69,11 +69,11 @@ class CI_spectra(Spectra, MO):
         self.num_ex_electrons = None
         # number of electrons excited compared between from and to state
 
-        super().start()
         self.parse_ci()
 
 
     def parse_ci(self):
+        super().start()
         if self.software == "GDV":
             """
             GDV parse not done yet

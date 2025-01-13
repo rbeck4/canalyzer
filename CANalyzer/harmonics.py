@@ -17,8 +17,6 @@ class Harmonics(Load):
         self.harmonic_data = None
         # nmodes x 4: col 0 frequency (au), col 1 reduced mass (au), col 2 force constant (au), col 3 IR Intensity (km/mol)
 
-        self.start()
-
 
     def start(self):
         super().start()
