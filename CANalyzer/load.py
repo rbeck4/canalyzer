@@ -50,8 +50,6 @@ class Load:
                 grouprange.append(rawrange)
             self.groups = dict(zip(self.groupnames, grouprange))
 
-        self.start()
-
 
     def parse_constants_gdv(self):
         # getting atoms
@@ -570,13 +568,10 @@ class Load:
                 except:
                     if str_ml == "X":
                         ml = 1
-                        #ml = -1
                     elif str_ml == "Y":
                         ml = -1
-                        #ml = 0
                     elif str_ml == "Z":
                         ml = 0
-                        #ml = 1
                     else:
                         ml = 0
                 basis[atomcount].append((oam, ml))

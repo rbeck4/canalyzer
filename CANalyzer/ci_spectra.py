@@ -73,6 +73,7 @@ class CI_spectra(Spectra, MO):
 
 
     def parse_ci(self):
+        super().start()
         if self.software == "GDV":
             """
             GDV parse not done yet

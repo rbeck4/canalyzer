@@ -17,8 +17,6 @@ class Harmonics(Load):
         self.harmonic_data = None
         # nmodes x 4: col 0 frequency (au), col 1 reduced mass (au), col 2 force constant (au), col 3 IR Intensity (km/mol)
 
-        self.start()
-
 
     def start(self):
         super().start()
@@ -56,7 +54,6 @@ class Harmonics(Load):
 
 
     def harmonic_wavefunction(self, mode, v=0):
-        # Returned wave function input must be in Bohr
         redmass = self.harmonic_data[mode, 1]
         freq = self.harmonic_data[mode, 0]
         if freq <= 0:
