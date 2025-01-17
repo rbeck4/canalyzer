@@ -31,6 +31,7 @@ class Spectra():
         self.display_ylim = None
         self.linewidth = 10
         self.colors = list(mcolors.CSS4_COLORS.keys())
+        self.linestyles = ["-"]
         self.labels = []
         self.legend_loc = "upper left"
         self.xlabel = "Energy (eV)"
@@ -99,11 +100,13 @@ class Spectra():
 
         xspace = np.linspace(xstart, xend, self.npoints)
 
+        ncolors = len(self.colors)
+        nlinestyles = len(self.linestyles)
         for i in range(len(spectra_names)):
             s = spectra_names[i]
             y = self.spectra[s]
             ax.plot(xspace - self.redshift, y * self.spectra_yscale, label=s, alpha=self.alpha, linewidth=self.linewidth,
-                    color=self.colors[i])
+                    color=self.colors[i%ncolors], linestyle=self.linestyles[i%nlinestyles])
 
         if self.exp_spectra:
             ax.plot(self.exp_spectra[0], self.exp_spectra[1], label="Exp", alpha=self.alpha, linewidth=self.linewidth,
