@@ -93,6 +93,7 @@ class MO(Load):
 
 
     def identify_group(self, atom_number):
+        group='undef'
         for name in self.groupnames:
             grouprange = self.groups[name]
             for r in grouprange:

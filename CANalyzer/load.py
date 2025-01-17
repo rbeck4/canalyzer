@@ -37,6 +37,7 @@ class Load:
 
         if self.groups:
             rawgroups = ast.literal_eval(self.groups)
+            rawgroups['undef'] = ''
             self.groupnames = rawgroups.keys()
             grouprange = []
             for key in self.groupnames:
