@@ -66,9 +66,11 @@ class NaturalOrbitals(Load):
             if self.software == "GDV":
                 real_pdm = self.readlog_matrix("1PDM Matrix (real):", self.naorb, self.naorb, instance=istate)
                 imag_pdm = self.readlog_matrix("1PDM Matrix (imag):", self.naorb, self.naorb, instance=istate)
-                pdm = real_pdm + 1j*imag_pdm
             elif self.software == "CQ":
+                real_pdm =
+                imag_pdm =
 
+            pdm = real_pdm + 1j * imag_pdm
             noon, no_transform = eig(pdm)
 
             acMO = self.MO[:, self.niorb:self.niorb+self.naorb]
