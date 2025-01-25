@@ -5,7 +5,7 @@ import CANalyzer.utilities as util
 import sys
 
 class MO(Load):
-    def __init__(self, logfile, fchkfile, filename, groups, displaywidth, separate_ml):
+    def __init__(self, logfile, fchkfile, filename, groups, displaywidth, separate_ml=False, grouptotal=False, renormalize_negatives=False):
         super().__init__(logfile, fchkfile, filename, groups, displaywidth)
         self.moalpha = None
         self.mobeta = None
@@ -18,6 +18,8 @@ class MO(Load):
         self.alpha_orbital_energy = None
         self.beta_orbital_energy = None
         self.separate_ml = separate_ml
+        self.grouptotal = grouptotal
+        self.renormalize_negatives = renormalize_negatives
 
     def mulliken_analysis(self):
         self.overlap = self.read_overlap()
@@ -91,6 +93,57 @@ class MO(Load):
         self.sorted_alphapop = np.real(self.sorted_alphapop)
         self.sorted_betapop = np.real(self.sorted_betapop)
 
+        if self.renormalize_negatives or self.grouptotal:
+            self.renorm_neg()
+
+        if self.grouptotal:
+            # must account for case with no beta matrix
+            try:
+                num_groups = len(self.groupnames)
+            except:
+                num_groups = len(set(self.atoms))
+            sum_over_groups_alphapop = np.zeros((num_groups, self.nbsuse))
+            if self.xhf in ["UHF", "GHF", "GCAS"]:
+                sum_over_groups_betapop = np.zeros((num_groups, self.nbsuse))
+            auxlist = []
+            for redgroup in self.reduced_groups:
+                auxlist.append(redgroup[0])
+            val, index, count = np.unique(auxlist, return_counts=True, return_index=True)
+            val = val[np.argsort(index)]
+            count = count[np.argsort(index)]
+            self.reduced_groups = [("", i) for i in val]
+
+            global_count = 0
+            for i in range(num_groups):
+                num_subgroup = count[i]
+                for l in range(num_subgroup):
+                    sum_over_groups_alphapop[i,:] +=  self.sorted_alphapop[global_count,:]
+                    if self.xhf in ["UHF", "GHF", "GCAS"]:
+                        sum_over_groups_betapop[i,:] +=  self.sorted_betapop[global_count,:]
+                    global_count += 1
+            self.sorted_alphapop = sum_over_groups_alphapop
+            if self.xhf in ["UHF", "GHF", "GCAS"]:
+                self.sorted_betapop = sum_over_groups_betapop
+
+
+    def renorm_neg(self):
+        # treats all negative populations as positive and renormalize
+        try:
+            num_groups = len(self.groupnames)
+        except:
+            num_groups = len(set(self.atoms))
+        num_subgroups = len(self.reduced_groups)
+        unnorm_pos_alpha = np.abs(self.sorted_alphapop)
+        if self.xhf in ["UHF", "GHF", "GCAS"]:
+            unnorm_pos_beta = np.abs(self.sorted_betapop)
+        for i in range(self.nbsuse):
+            unnorm_pos_alpha[:,i] = unnorm_pos_alpha[:,i]*(1/np.sum(unnorm_pos_alpha[:,i]))
+            if self.xhf in ["UHF", "GHF", "GCAS"]:
+                unnorm_pos_beta[:,i] = unnorm_pos_beta[:,i]*(1/np.sum(unnorm_pos_beta[:,i]))
+        self.sorted_alphapop = unnorm_pos_alpha
+        if self.xhf in ["UHF", "GHF", "GCAS"]:
+            self.sorted_betapop = unnorm_pos_beta
+
 
     def identify_group(self, atom_number):
         group='undef'
@@ -104,9 +157,10 @@ class MO(Load):
                     break
         return group
 
+
     def print_mulliken(self):
         self.alpha_orbital_energy, self.beta_orbital_energy = self.read_orbitalenergy()
-        if self.separate_ml:
+        if self.separate_ml and not self.grouptotal:
             header = ('Orbital Energy', '(Hartree)', 'ml')
         else:
             header = ('Orbital Energy', '(Hartree)')
