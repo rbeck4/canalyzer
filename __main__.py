@@ -44,7 +44,10 @@ args: Namespace = parser.parse_args()
 directory = os.getcwd()
 filename = directory + "/"
 if args.filename:
-    filename += args.filename
+    if args.filename[0] == "/":
+      filename = args.filename
+    else:
+      filename += args.filename
 
 if args.displaywidth:
     displaywidth = args.displaywidth
@@ -52,7 +55,7 @@ else:
     displaywidth = None
 
 # running jobs
-if args.jobtype == "MOAnalyzer":
+if args.jobtype.upper() == "MOANALYZER":
     if not args.filename:
         filename += 'orbitals.txt'
     if not args.ml:
@@ -61,28 +64,28 @@ if args.jobtype == "MOAnalyzer":
     MOAnalyzer.start()
     MOAnalyzer.mulliken_analysis()
     MOAnalyzer.print_mulliken()
-elif args.jobtype == 'Projection':
+elif args.jobtype.upper() == 'PROJECTION':
     if not args.filename:
         filename += 'projections.txt'
     Projection = CANalyzer.projection.Projection(args.log, args.fchk, args.fchk2, filename, displaywidth)
     Projection.start()
     Projection.project()
     Projection.print_project()
-elif args.jobtype == 'NatOrb':
+elif args.jobtype.upper() == 'NATORB':
     if not args.filename:
         filename += 'natorb'
     NatOrb = CANalyzer.natorb.NaturalOrbitals(args.log, args.fchk, filename, args.groups, displaywidth)
     NatOrb.start()
     NatOrb.compute_natorb()
-elif args.jobtype == 'SwapMO':
+elif args.jobtype.upper() == 'SWAPMO':
     swaps = ast.literal_eval(args.swaps)
     MoveMO = CANalyzer.transfer.Tranfer(args.log, args.fchk, args.log2, args.fchk2)
     MoveMO.swapmo(swaps)
-elif args.jobtype == 'MoveMO':
+elif args.jobtype.upper() == 'MOVEMO':
     MoveMO = CANalyzer.transfer.Tranfer(args.log, args.fchk, args.log2, args.fchk2)
     MoveMO.movemo()
 else:
-    print("Invalid jobtype")
+    print(args.jobtype + " is an Invalid jobtype")
 
 
 
