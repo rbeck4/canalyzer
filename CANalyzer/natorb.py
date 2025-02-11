@@ -67,7 +67,7 @@ class NaturalOrbitals(Load):
                 pdm = real_pdm + 1j * imag_pdm
             elif self.software == "CQ":
                 if self.ncomp == 2:
-                    ao_pdm = np.zeros((self.nbasis, self.nbsuse))
+                    ao_pdm = np.zeros((self.nbasis*self.ncomp, self.nbsuse*self.ncomp), dtype="complex128")
                     ao_pdm_x = self.readbin_matrix(f"/POSTHF/RDM-{istate}_MX")
                     ao_pdm_y = self.readbin_matrix(f"/POSTHF/RDM-{istate}_MY")
                     ao_pdm_z = self.readbin_matrix(f"/POSTHF/RDM-{istate}_MZ")
