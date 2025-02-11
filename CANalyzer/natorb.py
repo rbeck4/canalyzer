@@ -9,7 +9,7 @@ from CANalyzer.utilities import write_fchk, eig
 
 class NaturalOrbitals(Load):
     def __init__(self, logfile, fchkfile, filename, states, displaywidth):
-        Load.__init__(self, logfile, fchkfile, filename, None, displaywidth)
+        super().__init__(logfile, fchkfile, filename, None, displaywidth)
         self.MO = None
         self.niorb = None
         self.naorb = None
@@ -20,16 +20,23 @@ class NaturalOrbitals(Load):
     def start(self):
         super().start()
 
-        # getting number of active orbitals
-        line = str(subprocess.check_output("grep 'NAOrb=' " + self.logfile, shell=True)).split(" ")
-        refine_line = []
-        for l in line:
-            try:
-                refine_line.append(int(l))
-            except:
-                pass
-        self.niorb = refine_line[1]
-        self.naorb = refine_line[2]
+        if self.software == "GDV":
+            # getting number of active orbitals
+            line = str(subprocess.check_output("grep 'NAOrb=' " + self.logfile, shell=True)).split(" ")
+            refine_line = []
+            for l in line:
+                try:
+                    refine_line.append(int(l))
+                except:
+                    pass
+            self.niorb = refine_line[1]
+            self.naorb = refine_line[2]
+
+
+
+        elif self.software == "CQ":
+            self.niorb = int(str(subprocess.check_output("grep 'Number of Inactive Core Orbitals:' " + self.logfile, shell=True)).split()[-1].split("\\")[0])
+            self.naorb = int(str(subprocess.check_output("grep 'Number of Correlated Orbitals:' " + self.logfile, shell=True)).split()[-1].split("\\")[0])
 
         # defining states of interest
         if self.states:
@@ -40,7 +47,7 @@ class NaturalOrbitals(Load):
                     refine_soi.append(int(i))
                 except:
                     bounds = i.split('-')
-                    for j in range(int(bounds[0]), int(bounds[1])+1):
+                    for j in range(int(bounds[0]), int(bounds[1]) + 1):
                         refine_soi.append(j)
             refine_soi.sort()
             self.states = refine_soi
@@ -54,9 +61,26 @@ class NaturalOrbitals(Load):
     def compute_natorb(self):
         pdm = None
         for istate in self.states:
-            real_pdm = self.readlog_matrix("1PDM Matrix (real):", self.naorb, self.naorb, instance=istate)
-            imag_pdm = self.readlog_matrix("1PDM Matrix (imag):", self.naorb, self.naorb, instance=istate)
-            pdm = real_pdm + 1j*imag_pdm
+            if self.software == "GDV":
+                real_pdm = self.readlog_matrix("1PDM Matrix (real):", self.naorb, self.naorb, instance=istate)
+                imag_pdm = self.readlog_matrix("1PDM Matrix (imag):", self.naorb, self.naorb, instance=istate)
+                pdm = real_pdm + 1j * imag_pdm
+            elif self.software == "CQ":
+                if self.ncomp == 2:
+                    ao_pdm = np.zeros((self.nbasis, self.nbsuse))
+                    ao_pdm_x = self.readbin_matrix(f"/POSTHF/RDM-{istate}_MX")
+                    ao_pdm_y = self.readbin_matrix(f"/POSTHF/RDM-{istate}_MY")
+                    ao_pdm_z = self.readbin_matrix(f"/POSTHF/RDM-{istate}_MZ")
+                    ao_pdm_s = self.readbin_matrix(f"/POSTHF/RDM-{istate}_SCALAR")
+                    ao_pdm[:self.nbasis, :self.nbasis] = ao_pdm_s + ao_pdm_z
+                    ao_pdm[self.nbasis:, self.nbasis:] = ao_pdm_s - ao_pdm_z
+                    ao_pdm[:self.nbasis, self.nbasis:] = ao_pdm_x - 1j * ao_pdm_y
+                    ao_pdm[self.nbasis:, :self.nbasis] = ao_pdm_x + 1j * ao_pdm_y
+
+                    pdm = self.MO[:, self.niorb:self.niorb+self.naorb].T.conj() @ ao_pdm @ self.MO[:, self.niorb:self.niorb+self.naorb]
+                else:
+                    raise Exception("1 and 4-component natural orbitals NYI in CQ")
+
             noon, no_transform = eig(pdm)
 
             acMO = self.MO[:, self.niorb:self.niorb+self.naorb]
@@ -67,9 +91,19 @@ class NaturalOrbitals(Load):
             no_transform_abs = np.abs(no_transform)
             np.savetxt(f'natorb-state{istate}-ascontrib.csv', no_transform_abs, delimiter=",")
 
-            newfchk = f"natorb-state{istate}.fchk"
-            matsize = self.nbasis * self.nbsuse * self.ncomp * self.ncomp
-            write_fchk("Alpha MO coefficients", self.nri, natorb, matsize, self.fchkfile, newfchk)
+            if self.software == "GDV":
+                newfchk = f"natorb-state{istate}.fchk"
+                matsize = self.nbasis * self.nbsuse * self.ncomp * self.ncomp
+                write_fchk("Alpha MO coefficients", self.nri, natorb, matsize, self.fchkfile, newfchk)
+                if self.xhf in "[UHF]":
+                    raise Exception("UHF NO in GDV NYI")
+            elif self.software == "CQ":
+                bin_name = f"natorb-state{istate}.bin"
+                os.system(f"cp {self.fchkfile} {bin_name}")
+                natorb_bin = Load(self.logfile, bin_name)
+                natorb_bin.writebin_matrix("/SCF/MO1", natorb.T)
+                if self.xhf in "[UHF]":
+                    raise Exception("UHF NO in CQ NYI")
 
             with open(f"{self.filename}-state{istate}.txt", 'a') as sys.stdout, pd.option_context('display.max_rows', None,
                                                                            'display.max_columns', None):
