@@ -62,9 +62,12 @@ class NaturalOrbitals(Load):
         pdm = None
         for istate in self.states:
             if self.software == "GDV":
-                real_pdm = self.readlog_matrix("1PDM Matrix (real):", self.naorb, self.naorb, instance=istate)
-                imag_pdm = self.readlog_matrix("1PDM Matrix (imag):", self.naorb, self.naorb, instance=istate)
-                pdm = real_pdm + 1j * imag_pdm
+                if self.ncomp == 2:
+                    real_pdm = self.readlog_matrix("1PDM Matrix (real):", self.naorb, self.naorb, instance=istate)
+                    imag_pdm = self.readlog_matrix("1PDM Matrix (imag):", self.naorb, self.naorb, instance=istate)
+                    pdm = real_pdm + 1j * imag_pdm
+                else:
+                    raise Exception("1 and 4-component natural orbitals NYI in GDV")
             elif self.software == "CQ":
                 if self.ncomp == 2:
                     ao_pdm = np.zeros((self.nbasis*self.ncomp, self.nbsuse*self.ncomp), dtype="complex128")
@@ -72,10 +75,10 @@ class NaturalOrbitals(Load):
                     ao_pdm_y = self.readbin_matrix(f"/POSTHF/RDM-{istate}_MY")
                     ao_pdm_z = self.readbin_matrix(f"/POSTHF/RDM-{istate}_MZ")
                     ao_pdm_s = self.readbin_matrix(f"/POSTHF/RDM-{istate}_SCALAR")
-                    ao_pdm[:self.nbasis, :self.nbasis] = ao_pdm_s + ao_pdm_z
-                    ao_pdm[self.nbasis:, self.nbasis:] = ao_pdm_s - ao_pdm_z
-                    ao_pdm[:self.nbasis, self.nbasis:] = ao_pdm_x - 1j * ao_pdm_y
-                    ao_pdm[self.nbasis:, :self.nbasis] = ao_pdm_x + 1j * ao_pdm_y
+                    ao_pdm[:self.nbasis, :self.nbsuse] = (ao_pdm_s + ao_pdm_z)*0.5
+                    ao_pdm[self.nbasis:, self.nbsuse:] = (ao_pdm_s - ao_pdm_z)*0.5
+                    ao_pdm[:self.nbasis, self.nbsuse:] = (ao_pdm_x - 1j * ao_pdm_y)*0.5
+                    ao_pdm[self.nbasis:, :self.nbsuse] = (ao_pdm_x + 1j * ao_pdm_y)*0.5
 
                     pdm = self.MO[:, self.niorb:self.niorb+self.naorb].T.conj() @ ao_pdm @ self.MO[:, self.niorb:self.niorb+self.naorb]
                 else:
