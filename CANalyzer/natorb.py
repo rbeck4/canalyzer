@@ -80,7 +80,13 @@ class NaturalOrbitals(Load):
                     ao_pdm[:self.nbasis, self.nbsuse:] = (ao_pdm_x - 1j * ao_pdm_y)*0.5
                     ao_pdm[self.nbasis:, :self.nbsuse] = (ao_pdm_x + 1j * ao_pdm_y)*0.5
 
-                    pdm = self.MO[:, self.niorb:self.niorb+self.naorb].T.conj() @ ao_pdm @ self.MO[:, self.niorb:self.niorb+self.naorb]
+                    overlap_2c = np.zeros((self.nbasis*self.ncomp, self.nbasis*self.ncomp), dtype="complex128")
+                    overlap = self.read_overlap()
+                    overlap_2c[:self.nbasis, :self.nbsuse] = overlap
+                    overlap_2c[self.nbasis:, self.nbsuse:] = overlap
+
+                    pdm = self.MO[:, self.niorb:self.niorb+self.naorb].T.conj() @ overlap_2c @ ao_pdm @ overlap_2c @ self.MO[:, self.niorb:self.niorb+self.naorb]
+
                 else:
                     raise Exception("1 and 4-component natural orbitals NYI in CQ")
 
