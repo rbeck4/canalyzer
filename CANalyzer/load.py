@@ -541,8 +541,8 @@ class Load:
             self.nae = self.nbe
         else:
             totale = self.nae
-            self.nae = input("How many alpha electrons?")
-            self.nbe = input("How many beta electrons?")
+            self.nae = int(input("How many alpha electrons?"))
+            self.nbe = int(input("How many beta electrons?"))
             if self.nae + self.nbe != totale:
                 raise Exception("Invalid number of alpha and beta electrons")
 
