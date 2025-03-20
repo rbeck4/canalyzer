@@ -49,11 +49,13 @@ def write_fchk(startstr, nri, matrix, matsize, oldfchk, fchk):
     os.system(f"tail -n +{startline2} {oldfchk} >> {fchk}")
 
 
-def eig(A):
-    import numpy as np
-    import numpy.linalg as npl
-    evalue, evector = npl.eig(A)
-    idx = evalue.argsort()[::-1]   
+def eig(A, ifHermitian=False):
+    import scipy.linalg as spl
+    if ifHermitian:
+        evalue, evector = spl.eigh(A)
+    else:
+        evalue, evector = spl.eig(A)
+    idx = evalue.argsort()[::-1]
     evalue = evalue[idx]
     evector = evector[:,idx]
     return evalue, evector

@@ -90,7 +90,7 @@ class NaturalOrbitals(Load):
                 else:
                     raise Exception("1 and 4-component natural orbitals NYI in CQ")
 
-            noon, no_transform = eig(pdm)
+            noon, no_transform = eig(pdm, ifHermitian=True)
 
             acMO = self.MO[:, self.niorb:self.niorb+self.naorb]
             acnatorb = acMO @ no_transform
