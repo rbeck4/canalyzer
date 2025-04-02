@@ -58,13 +58,19 @@ if args.displaywidth:
 else:
     displaywidth = None
 
+if args.grouptotal:
+    grouptotal = ast.literal_eval(args.grouptotal)
+
+if args.ml:
+    ml = ast.literal_eval(args.ml)
+
 # running jobs
 if args.jobtype == "MOANALYZER":
     if not args.filename:
         filename += 'orbitals.txt'
     if not args.ml:
         args.ml = False
-    MOAnalyzer = CANalyzer.mo.MO(args.log, args.fchk, filename, args.groups, displaywidth, args.ml, args.grouptotal, args.renormalize_negatives)
+    MOAnalyzer = CANalyzer.mo.MO(args.log, args.fchk, filename, args.groups, displaywidth, ml, grouptotal, args.renormalize_negatives)
     MOAnalyzer.start()
     MOAnalyzer.mulliken_analysis()
     MOAnalyzer.print_mulliken()

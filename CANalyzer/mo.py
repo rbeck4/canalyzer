@@ -78,8 +78,8 @@ class MO(Load):
         else:
             self.separate_ml = False
             self.reduced_groups = [(g, l) for g in self.groupnames for l in range(self.maxL + 1)]
-            self.sorted_alphapop = np.zeros((len(self.reduced_groups), self.nbsuse*self.ncomp))
-            self.sorted_betapop = np.zeros((len(self.reduced_groups), self.nbsuse*self.ncomp))
+            self.sorted_alphapop = np.zeros((len(self.reduced_groups), self.nbsuse*self.ncomp),dtype="complex128")
+            self.sorted_betapop = np.zeros((len(self.reduced_groups), self.nbsuse*self.ncomp),dtype="complex128")
             for j in range(self.nbsuse*self.ncomp):
                 for i in range(self.nbasis):
                     atomshellpair = self.subshell[i]
@@ -102,9 +102,9 @@ class MO(Load):
                 num_groups = len(self.groupnames)
             except:
                 num_groups = len(set(self.atoms))
-            sum_over_groups_alphapop = np.zeros((num_groups, self.nbsuse))
+            sum_over_groups_alphapop = np.zeros((num_groups, self.nbsuse*self.ncomp))
             if self.xhf in ["UHF", "GHF", "GCAS"]:
-                sum_over_groups_betapop = np.zeros((num_groups, self.nbsuse))
+                sum_over_groups_betapop = np.zeros((num_groups, self.nbsuse*self.ncomp))
             auxlist = []
             for redgroup in self.reduced_groups:
                 auxlist.append(redgroup[0])
@@ -123,23 +123,21 @@ class MO(Load):
                     global_count += 1
             self.sorted_alphapop = sum_over_groups_alphapop
             if self.xhf in ["UHF", "GHF", "GCAS"]:
+                self.sorted_betapop = np.zeros(sum_over_groups_betapop.shape)
                 self.sorted_betapop = sum_over_groups_betapop
 
 
     def renorm_neg(self):
         # treats all negative populations as positive and renormalize
-        try:
-            num_groups = len(self.groupnames)
-        except:
-            num_groups = len(set(self.atoms))
-        num_subgroups = len(self.reduced_groups)
         unnorm_pos_alpha = np.abs(self.sorted_alphapop)
+        unnorm_pos_beta = 0
         if self.xhf in ["UHF", "GHF", "GCAS"]:
             unnorm_pos_beta = np.abs(self.sorted_betapop)
         for i in range(self.nbsuse):
-            unnorm_pos_alpha[:,i] = unnorm_pos_alpha[:,i]*(1/np.sum(unnorm_pos_alpha[:,i]))
+            renormalization_factor = 1/(np.sum(unnorm_pos_alpha[:,i]) + np.sum(unnorm_pos_beta[:,i]))
+            unnorm_pos_alpha[:,i] = unnorm_pos_alpha[:,i]*renormalization_factor
             if self.xhf in ["UHF", "GHF", "GCAS"]:
-                unnorm_pos_beta[:,i] = unnorm_pos_beta[:,i]*(1/np.sum(unnorm_pos_beta[:,i]))
+                unnorm_pos_beta[:,i] = unnorm_pos_beta[:,i]*renormalization_factor
         self.sorted_alphapop = unnorm_pos_alpha
         if self.xhf in ["UHF", "GHF", "GCAS"]:
             self.sorted_betapop = unnorm_pos_beta
