@@ -60,9 +60,13 @@ else:
 
 if args.grouptotal:
     grouptotal = ast.literal_eval(args.grouptotal)
+else:
+    grouptotal = False
 
 if args.ml:
     ml = ast.literal_eval(args.ml)
+else:
+    ml = False
 
 # running jobs
 if args.jobtype == "MOANALYZER":
