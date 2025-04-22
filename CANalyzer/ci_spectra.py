@@ -114,11 +114,16 @@ class CI_spectra(Spectra, MO):
             startline_os = int(grepline.split("'")[1].split(":")[0])
             statecounter = self.numfromstates
             fromstatecounter = 1
-            while fromstatecounter <= self.numfromstates:
+            for x in range(self.nroots*2):
+                #X2 as CQ double spaces them...
                 parseline = linecache.getline(self.logfile, startline_os)
                 try:
-                    self.energy[fromstatecounter - 1, statecounter] = float(parseline.split("=")[1].split("f")[0])
-                    self.oscstr[fromstatecounter - 1, statecounter] = float(parseline.split("=")[-1].split("f")[0])
+                    endSt = int(parseline.split()[2])
+                    fromSt = int(parseline.split()[5].split(':')[0])
+                    if fromSt == 1:
+                      print("TOTAL: ", self.nroots, " END: ", endSt, " FRM: ", fromSt)
+                    self.energy[fromSt, endSt] = float(parseline.split("=")[1].split("f")[0])
+                    self.oscstr[fromSt, endSt] = float(parseline.split("=")[-1].split("f")[0])
                     statecounter += 1
                 except:
                     pass
