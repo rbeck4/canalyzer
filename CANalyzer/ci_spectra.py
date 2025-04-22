@@ -120,8 +120,6 @@ class CI_spectra(Spectra, MO):
                 try:
                     endSt = int(parseline.split()[2])
                     fromSt = int(parseline.split()[5].split(':')[0])
-                    if fromSt == 1:
-                      print("TOTAL: ", self.nroots, " END: ", endSt, " FRM: ", fromSt)
                     self.energy[fromSt, endSt] = float(parseline.split("=")[1].split("f")[0])
                     self.oscstr[fromSt, endSt] = float(parseline.split("=")[-1].split("f")[0])
                     statecounter += 1
@@ -138,7 +136,7 @@ class CI_spectra(Spectra, MO):
             statecounter = 0
             lastcycle = False
 
-            while statecounter <= self.nstates - 1:
+            while statecounter <= self.nstates:
                 parseline = linecache.getline(self.logfile, startline_pdm).split()
                 try:
                     if "State" in parseline[0]:
@@ -147,16 +145,17 @@ class CI_spectra(Spectra, MO):
                         for n in occupation_numbers:
                             self.occnum[statecounter - 1, n[0] - 1] = n[1]
                         if statecounter == self.nstates:
-                            statecounter -= 1
                             lastcycle = True
                     else:
-                        if lastcycle:
+                        #Final round, presumes '--' is used as closer...
+                        if lastcycle and "-------------------" in parseline[0]:
                             statecounter += 1
                         occupation_numbers = [(int(x.split("(")[0]), float(x.split("(")[1][:-1])) for x in parseline]
                         for n in occupation_numbers:
                             self.occnum[statecounter - 1, n[0] - 1] = n[1]
                 except:
                     pass
+                print("PARSELINE: ", parseline)
                 startline_pdm += 1
 
 
