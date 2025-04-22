@@ -155,7 +155,6 @@ class CI_spectra(Spectra, MO):
                             self.occnum[statecounter - 1, n[0] - 1] = n[1]
                 except:
                     pass
-                print("PARSELINE: ", parseline)
                 startline_pdm += 1
 
 
