@@ -56,6 +56,9 @@ class CI_spectra(Spectra, MO):
         self.nroots = None
         # number of non-zero excitation energies to be plotted
 
+        self.eigenVals = None
+        # numstates is the energy of each state
+
         self.energy = None
         # numfromstates x nstates matrix where element (i, j) is the excitation energy between states i and j
         # energies between from states are not populated and remain zero
@@ -156,6 +159,12 @@ class CI_spectra(Spectra, MO):
                 except:
                     pass
                 startline_pdm += 1
+            
+            # start parsing for EigenValues
+            self.eigenVals = np.asarray([0. for x in range(self.nstates)])
+            grepline = str(subprocess.check_output("grep -m%i 'State: ' " %self.nstates + self.logfile, shell=True)).split('\\n')
+            for i in range(self.nstates):
+                self.eigenVals[i] = float(grepline[i].split(':')[-1])
 
 
     def decompose_byspaces(self):
