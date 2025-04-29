@@ -121,6 +121,12 @@ class CI_spectra(Spectra, MO):
                 #X2 as CQ double spaces them...
                 parseline = linecache.getline(self.logfile, startline_os)
                 try:
+                    #
+                    #CQ printing:
+                    #Ex State: endSt to state: fromSt En F
+                    #
+                    #Energy and Osc. storage in 2D array (len(fromStates) by 
+                    #len(nStates)).
                     endSt = int(parseline.split()[2])-1
                     fromSt = int(parseline.split()[5].split(':')[0])-1
                     self.energy[fromSt, endSt] = float(parseline.split("=")[1].split("f")[0])
