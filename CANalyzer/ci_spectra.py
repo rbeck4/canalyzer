@@ -162,7 +162,7 @@ class CI_spectra(Spectra, MO):
             
             # start parsing for EigenValues
             self.eigenVals = np.asarray([0. for x in range(self.nstates)])
-            grepline = str(subprocess.check_output("grep -m%i 'State: ' " %self.nstates + self.logfile, shell=True)).split('\\n')
+            grepline = str(subprocess.check_output("grep -m%i 'State:' " %self.nstates + self.logfile, shell=True)).split('\\n')
             for i in range(self.nstates):
                 self.eigenVals[i] = float(grepline[i].split(':')[-1])
 
