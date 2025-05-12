@@ -43,8 +43,8 @@ class CI_spectra(Spectra, MO):
         self.numfromstates = None
         # number of leaving states
 
-        self.numtostates = None
-        # number of arriving states
+        self.ndet = None
+        # Total number of determinants
 
         self.nspaces = None
         # number of orbital partitions
@@ -105,13 +105,19 @@ class CI_spectra(Spectra, MO):
             self.unocc = self.nactive - self.nactelec
             self.nocc = self.nactive - self.unocc
             grepline = str(subprocess.check_output("grep -n 'Excited State:' " + self.logfile, shell=True))
-            self.nstates = int(grepline.split()[-10])
-            self.numfromstates = int(grepline.split()[-7].split(":")[0])
-            self.numtostates = self.nstates - self.numfromstates + 1
+
+            #In case job doesn't completely finish all property evals
+            #NOTE this relies on the job summary printing at the beginning of the job:
+            self.ndet = int(str(subprocess.check_output("grep -n 'Total Number of Determinants' " + self.logfile, shell=True)).split('=')[-1].split('\\n')[0])
+            self.nstates = int(str(subprocess.check_output("grep -n 'NROOTS:' " + self.logfile, shell=True)).split(':')[-1].split('\\n')[0])
+            #In case number of requested roots > number det:
+            self.nstates = min(self.ndet, self.nstates)
+            self.numfromstates = int(str(subprocess.check_output("grep -n 'OSCISTREN:' " + self.logfile, shell=True)).split(':')[-1].split('\\n')[0])
+
             self.oscstr = np.zeros((self.numfromstates, self.nstates))
             self.energy = np.zeros((self.numfromstates, self.nstates))
             self.occnum = np.zeros((self.nstates, self.nactive))
-            self.nroots = self.numfromstates * self.numtostates
+            self.nroots = self.numfromstates * self.nstates
 
             # start parsing for excitation energies and oscillator strength
             startline_os = int(grepline.split("'")[1].split(":")[0])
