@@ -24,6 +24,8 @@ class MO(Load):
     def mulliken_analysis(self):
         self.overlap = self.read_overlap()
         self.moalpha, self.mobeta = self.read_mo()
+        print("SIZE OVLP: ", self.overlap.shape)
+        print("SIZE MO1: ", self.moalpha.shape)
         cs = np.matmul(self.overlap, self.moalpha)
         if self.nri == 1:
             pop = np.multiply(self.moalpha, cs)

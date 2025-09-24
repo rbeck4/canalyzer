@@ -527,7 +527,7 @@ class Load:
             atomnumber += 1
 
         # loading nbasis
-        self.nbasis = int(str(subprocess.check_output(f"grep 'NBasis' {self.logfile}", shell=True)).split(" ")[
+        self.nbasis = int(str(subprocess.check_output(f"grep -m1 'NBasis' {self.logfile}", shell=True)).split(" ")[
                               -1][:-3])
         self.nbsuse = self.nbasis
 
@@ -574,8 +574,11 @@ class Load:
                         ml = 0
                     else:
                         ml = 0
-                basis[atomcount].append((oam, ml))
-                basiscount += 1
+                if atomcount <= self.natoms:
+                  basis[atomcount].append((oam, ml))
+                  basiscount += 1
+                else:
+                  break
             linenumber += 1
 
         self.subshell = []
