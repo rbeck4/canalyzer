@@ -64,7 +64,7 @@ else:
     grouptotal = False
 
 if args.ml:
-    ml = ast.literal_eval(args.ml)
+    ml = True
 else:
     ml = False
 
