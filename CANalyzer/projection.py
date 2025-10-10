@@ -19,7 +19,7 @@ class Projection():
 
     def project(self):
         self.ctsc = self.mo1a.conj().T @ self.overlap @ self.mo2a
-        if self.fchk1.xhf[0] == self.fchk2.xhf[0]:
+        if self.fchk1.xhf not in ["RHF"]:
             ctscb = self.mo1b.conj().T @ self.overlap @ self.mo2b
             self.ctsc += ctscb
         self.ctsc = np.abs(self.ctsc)
@@ -37,16 +37,16 @@ class Projection():
 
 
     def start(self):
-        self.fchk1.parse_constants_gdv()
-        self.fchk1.parse_log()
+        #self.fchk1.parse_constants_gdv()
+        #self.fchk1.parse_log()
         self.overlap = self.fchk1.read_overlap()
         self.mo1a, self.mo1b = self.fchk1.read_mo()
 
-        self.fchk2.parse_constants_gdv()
-        self.fchk2.parse_log()
+        #self.fchk2.parse_constants_gdv()
+        #self.fchk2.parse_log()
         self.mo2a, self.mo2b = self.fchk2.read_mo()
 
-        if self.fchk1.xhf[0] != self.fchk2.xhf[0]:
+        if self.fchk1.xhf != self.fchk2.xhf:
             raise Exception("Both jobs must be the same component.")
 
 
