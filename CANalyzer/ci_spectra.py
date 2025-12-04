@@ -87,7 +87,8 @@ class CI_spectra(Spectra, MO):
             self.nstates = int(energyline_split[-2].split(":")[2].split()[0])
             pdmdiag_list = []  # just 1PDM diagonals in MO basis
             for i in range(self.nstates):
-                pdmdiag = self.readlog_matrix("For Simplicity", self.nstates, 1, instance=i+1).flatten()
+                print(self.nactive)
+                pdmdiag = self.readlog_matrix("For Simplicity", self.nactive, 1, instance=i+1).flatten()
                 pdmdiag_list.append(pdmdiag)
             self.occnum = np.array(pdmdiag_list)
 

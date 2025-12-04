@@ -153,10 +153,12 @@ class Load:
         atomcount = 0
         while atomcount < self.natoms:
             line = linecache.getline(self.logfile, basisstart).split()
-            if line[0] in shells:
-                basis[atomcount].append(line[0])
-            if "****" in line:
-                atomcount += 1
+            #print("ATMCNT: %i, NMATM: %i, BSST: %i, LN: " %(atomcount,self.natoms, basisstart), line)
+            if len(line) > 0:
+                if line[0] in shells:
+                    basis[atomcount].append(line[0])
+                if "****" in line:
+                    atomcount += 1
             basisstart += 1
 
         new_basis = []
@@ -344,6 +346,7 @@ class Load:
         col_offset = 0
         for b in range(blocks):
             for line in range(nrows):
+                print("LINE NUMBER: ", startline)
                 linear2= []
                 matrixline = linecache.getline(self.logfile, startline)
                 if 'D' in matrixline:
@@ -376,7 +379,6 @@ class Load:
                         linear2.append(xx)
                     except:
                         linear2.append(x)
-
                 dump = linear2.pop(0)
                 try:
                     dump = int(dump - 1)

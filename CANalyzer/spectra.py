@@ -45,7 +45,7 @@ class Spectra():
         self.npoints = 5000
         self.spectra = {}
         self.exp_spectra = None
-        self.thresh = 1E-6
+        self.thresh = 1E-12
 
     def gaussian(self, energy, broadening, osc_str, xspace):
         ones = np.ones(xspace.shape)
@@ -60,7 +60,8 @@ class Spectra():
         return osc_str * lorentzian
 
 
-    def make_spectrum(self, title, xstart, xend, roots, os, broadening, lineshape=None):
+    def make_spectrum(self, title, xstart, xend, roots, os, broadening, lineshape=None, npoints=5000):
+        self.npoints = npoints
         line_list = []
         xspace = np.linspace(xstart, xend, self.npoints)
         os_list = os
