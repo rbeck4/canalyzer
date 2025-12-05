@@ -159,6 +159,9 @@ class Load:
                     basis[atomcount].append(line[0])
                 if "****" in line:
                     atomcount += 1
+            else:
+                print("Attempting to read line", basisstart, " line=", line)
+                print("WARNING, we could find basis info, but cannot read it in.  If this is a CI job with an energy-specific Davidson you need to remove the lines from 'Starting Davidson' to 'Finished Davidson' as the characters there mess up the reading package.")
             basisstart += 1
 
         new_basis = []
@@ -346,7 +349,6 @@ class Load:
         col_offset = 0
         for b in range(blocks):
             for line in range(nrows):
-                print("LINE NUMBER: ", startline)
                 linear2= []
                 matrixline = linecache.getline(self.logfile, startline)
                 if 'D' in matrixline:

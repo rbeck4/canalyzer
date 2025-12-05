@@ -85,9 +85,10 @@ class CI_spectra(Spectra, MO):
             energyline_split = energyline.split("\\n")
             self.energy = [float(x.split("(Hartree):")[-1]) for x in energyline_split[:-1]]
             self.nstates = int(energyline_split[-2].split(":")[2].split()[0])
+            self.nactive = int(subprocess.check_output("grep 'Number of CAS Orbitals' " + self.fchkfile, shell=True).split()[-1])
             pdmdiag_list = []  # just 1PDM diagonals in MO basis
             for i in range(self.nstates):
-                print(self.nactive)
+                print('\r', "READING PDM FOR STATE: %i / %i" %(i, self.nstates))
                 pdmdiag = self.readlog_matrix("For Simplicity", self.nactive, 1, instance=i+1).flatten()
                 pdmdiag_list.append(pdmdiag)
             self.occnum = np.array(pdmdiag_list)
@@ -95,6 +96,7 @@ class CI_spectra(Spectra, MO):
             self.oscstr = []
             oslines = str(subprocess.check_output("grep 'Oscillator Strength For States' " + self.logfile, shell=True)).split("\\n")[:-1]
             oslines[0] = oslines[0].split("'")[-1]
+            self.numfromstates = int(oslines[-1].split()[-5])
             for i in range(len(oslines)):
                 oscstr = float(oslines[i].split("f=")[-1])
                 self.oscstr.append(oscstr)
