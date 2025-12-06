@@ -8,16 +8,13 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 class CI_spectra(Spectra, MO):
-    def __init__(self, logfile, fchkfile, groups, orbital_decomposition=True, separate_ml=False):
+    def __init__(self, logfile, fchkfile, groups=None, separate_ml=False):
         MO.__init__(self, logfile, fchkfile, None, groups, None, separate_ml)
         Spectra.__init__(self)
         self.occnum = None
         # approximate occupation numbers using 1PDM diagoanls
         # nstates x nactive matrix where element (i, j) is the occupation number for orbital j in state i
         # index offset by 1 due to difference between Python and state indexing
-
-        self.orbital_decomposition = orbital_decomposition
-        # True to decompose spectra into orbital gains and losses
 
         self.nactive = None
         # number of active orbitals
@@ -37,6 +34,13 @@ class CI_spectra(Spectra, MO):
         # state index offset by 1 due to difference between Python and state indexing
         # elements between two leaving states are not populated and remains zero
 
+        self.decomp_byorbital = None
+        # numfromstates x nstates x ngroups tensor where element (i, j, k)
+        # is the state i -> j oscillator strength contribution from the change 
+        #     in electron population in group k
+        # state index offset by 1 due to difference between Python and state indexing
+        # elements between two leaving states are not populated and remains zero
+
         self.nstates = None
         # number of total states
 
@@ -52,6 +56,9 @@ class CI_spectra(Spectra, MO):
         self.spaces = None
         # orbital partitioning as a dictionary of a list of tuples with start and end indices (inclusive, AS index)
         # {"Name" : (start, end)}
+
+        self.groups = groups
+        #MO decomp groups
 
         self.nroots = None
         # number of non-zero excitation energies to be plotted
@@ -87,19 +94,32 @@ class CI_spectra(Spectra, MO):
             self.nstates = int(energyline_split[-2].split(":")[2].split()[0])
             self.nactive = int(subprocess.check_output("grep 'Number of CAS Orbitals' " + self.fchkfile, shell=True).split()[-1])
             pdmdiag_list = []  # just 1PDM diagonals in MO basis
+            stateEnergies = []
+            
+            enlines = str(subprocess.check_output("grep 'Energy (Hartree):' " + self.logfile, shell=True)).split("\\n")[:-1]
             for i in range(self.nstates):
-                print('\r', "READING PDM FOR STATE: %i / %i" %(i, self.nstates))
+                print('\r', "READING PDM FOR STATE: %i / %i" %(i, self.nstates), end='')
+                stateEnergies.append(float(enlines[i].split()[-1])) 
                 pdmdiag = self.readlog_matrix("For Simplicity", self.nactive, 1, instance=i+1).flatten()
                 pdmdiag_list.append(pdmdiag)
+            enlines = None
             self.occnum = np.array(pdmdiag_list)
 
             self.oscstr = []
             oslines = str(subprocess.check_output("grep 'Oscillator Strength For States' " + self.logfile, shell=True)).split("\\n")[:-1]
             oslines[0] = oslines[0].split("'")[-1]
             self.numfromstates = int(oslines[-1].split()[-5])
+            
+            self.oscstr = np.zeros([self.numfromstates,self.nstates])
+            self.energy = np.zeros([self.numfromstates,self.nstates])
+           
             for i in range(len(oslines)):
                 oscstr = float(oslines[i].split("f=")[-1])
-                self.oscstr.append(oscstr)
+                sts    = oslines[i].split(":")
+                tmpFrom = int(sts[0].split()[-1])-1
+                tmpArrv = int(sts[1].split()[0])-1
+                self.oscstr[tmpFrom,tmpArrv] = oscstr
+                self.energy[tmpFrom,tmpArrv] = stateEnergies[tmpArrv] - stateEnergies[tmpFrom]
 
         elif self.software == "CQ":
             self.nactive = int(str(subprocess.check_output("grep 'Number of Correlated Orbitals:' " + self.logfile, shell=True)).split()[-1].split("\\n")[0])
@@ -216,9 +236,38 @@ class CI_spectra(Spectra, MO):
                     scaling = pop_change / self.num_ex_electrons[n, state]
                     self.decomp_byspaces[n, state, nspace] = scaling * self.oscstr[n, state]
 
+    def decompose_byorbital(self):
+        MO.start()
+        MO.mulliken_analysis()
+        if not self.groups:
+            self.groups = MO.reduced_groups
 
+        groups_names = list(self.groups.keys())
+        self.nspaces = len(groups_names)
 
+        self.decomp_byorbital = np.zeros((self.numfromstates, self.nstates, self.nspaces))
 
+        electron_pop_change = np.zeros((self.numfromstates, self.nstates, self.nactive))
+        for i in range(self.numfromstates):
+            for j in range(self.nstates):
+                electron_pop_change[i, j, :] = self.occnum[j, :] - self.occnum[i, :]
 
+        self.num_ex_electrons = np.zeros((self.numfromstates, self.nstates))
+        for i in range(self.numfromstates):
+            for j in range(self.nstates):
+                self.num_ex_electrons[i, j] = np.sum(np.abs(electron_pop_change[i, j, :])) / 2
 
-
+        for n in range(self.numfromstates):
+            for nspace in range(self.nspaces):
+                space_name = groups_names[nspace]
+                space_start = self.groups[space_name][0] - 1
+                space_end = self.groups[space_name][1]
+                for state in range(self.numfromstates, self.nstates):
+                    if self.num_ex_electrons[n, state] < 0.6:
+                        print(f"States {n+1} and {state+1} has nearly the same electron occupation. ")
+                        if self.num_ex_electrons[n, state] < 0.01:
+                            print(f"Omitting contributions from this excitation. Beware of results.")
+                            continue
+                    pop_change = np.sum(electron_pop_change[n, state, space_start:space_end])
+                    scaling = pop_change / self.num_ex_electrons[n, state]
+                    self.decomp_byspaces[n, state, nspace] = scaling * self.oscstr[n, state]
