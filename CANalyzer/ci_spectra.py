@@ -9,7 +9,8 @@ import matplotlib as mpl
 
 class CI_spectra(Spectra, MO):
     def __init__(self, logfile, fchkfile, groups=None, separate_ml=False):
-        MO.__init__(self, logfile, fchkfile, None, groups, None, separate_ml)
+        MO.__init__(self, logfile, fchkfile, None, groups, None, separate_ml, False, True)
+        MO.start(self)
         Spectra.__init__(self)
         self.occnum = None
         # approximate occupation numbers using 1PDM diagoanls
@@ -93,6 +94,7 @@ class CI_spectra(Spectra, MO):
             self.energy = [float(x.split("(Hartree):")[-1]) for x in energyline_split[:-1]]
             self.nstates = int(energyline_split[-2].split(":")[2].split()[0])
             self.nactive = int(subprocess.check_output("grep 'Number of CAS Orbitals' " + self.fchkfile, shell=True).split()[-1])
+            self.nactelec = int(subprocess.check_output("grep 'Number of CAS Electrons' " + self.fchkfile, shell=True).split()[-1])
             pdmdiag_list = []  # just 1PDM diagonals in MO basis
             stateEnergies = []
             
@@ -102,6 +104,7 @@ class CI_spectra(Spectra, MO):
                 stateEnergies.append(float(enlines[i].split()[-1])) 
                 pdmdiag = self.readlog_matrix("For Simplicity", self.nactive, 1, instance=i+1).flatten()
                 pdmdiag_list.append(pdmdiag)
+            print("\n")
             enlines = None
             self.occnum = np.array(pdmdiag_list)
 
@@ -237,13 +240,9 @@ class CI_spectra(Spectra, MO):
                     self.decomp_byspaces[n, state, nspace] = scaling * self.oscstr[n, state]
 
     def decompose_byorbital(self):
-        MO.start()
-        MO.mulliken_analysis()
-        if not self.groups:
-            self.groups = MO.reduced_groups
-
-        groups_names = list(self.groups.keys())
-        self.nspaces = len(groups_names)
+        self.mulliken_analysis()
+        self.spaces = list(self.reduced_groups)
+        self.nspaces = len(self.spaces)
 
         self.decomp_byorbital = np.zeros((self.numfromstates, self.nstates, self.nspaces))
 
@@ -257,17 +256,14 @@ class CI_spectra(Spectra, MO):
             for j in range(self.nstates):
                 self.num_ex_electrons[i, j] = np.sum(np.abs(electron_pop_change[i, j, :])) / 2
 
-        for n in range(self.numfromstates):
-            for nspace in range(self.nspaces):
-                space_name = groups_names[nspace]
-                space_start = self.groups[space_name][0] - 1
-                space_end = self.groups[space_name][1]
-                for state in range(self.numfromstates, self.nstates):
-                    if self.num_ex_electrons[n, state] < 0.6:
-                        print(f"States {n+1} and {state+1} has nearly the same electron occupation. ")
-                        if self.num_ex_electrons[n, state] < 0.01:
-                            print(f"Omitting contributions from this excitation. Beware of results.")
-                            continue
-                    pop_change = np.sum(electron_pop_change[n, state, space_start:space_end])
-                    scaling = pop_change / self.num_ex_electrons[n, state]
-                    self.decomp_byspaces[n, state, nspace] = scaling * self.oscstr[n, state]
+        #TODO if UHF is ever supported add Beta info?:
+        self.decomp_byorbital = np.zeros((self.numfromstates, self.nstates, self.nspaces))
+        rangeMO=((self.nae + self.nbe)-self.nactelec, \
+                 ((self.nae + self.nbe)-self.nactelec) + self.nactive)
+        for i in range(self.numfromstates):
+            for j in range(self.nstates):
+                out = electron_pop_change[i,j,:] * \
+                      (self.sorted_alphapop[:,rangeMO[0]:rangeMO[1]] + \
+                      self.sorted_betapop[:,rangeMO[0]:rangeMO[1]]) * \
+                      self.oscstr[i,j]
+                self.decomp_byorbital[i,j,:] = np.sum(out,axis=1)
