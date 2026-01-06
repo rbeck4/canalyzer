@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 class CI_spectra(Spectra, MO):
-    def __init__(self, logfile, fchkfile, groups=None, separate_ml=False):
+    def __init__(self, logfile, fchkfile, groups=None, separate_ml=False, grouptotal=False):
         MO.__init__(self, logfile, fchkfile, None, groups, None, separate_ml, False, True)
         MO.start(self)
         Spectra.__init__(self)
@@ -28,6 +28,9 @@ class CI_spectra(Spectra, MO):
 
         self.unocc = None
         # number of unoccupied active space orbitals
+
+        self.grouptotal = grouptotal
+        #Option to sum all atomic contributions in mullikan
 
         self.decomp_byspaces = None
         # numfromstates x nstates x nspaces tensor where element (i, j, k)
