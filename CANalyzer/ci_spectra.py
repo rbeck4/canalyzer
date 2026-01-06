@@ -138,8 +138,13 @@ class CI_spectra(Spectra, MO):
             self.nstates = int(str(subprocess.check_output("grep -n 'NROOTS:' " + self.logfile, shell=True)).split(':')[-1].split('\\n')[0])
             #In case number of requested roots > number det:
             self.nstates = min(self.ndet, self.nstates)
-            self.numfromstates = int(str(subprocess.check_output("grep -n 'OSCISTREN:' " + self.logfile, shell=True)).split(':')[-1].split('\\n')[0])
+            #In case of using 2nd order oscistren:
+            try:
+                self.numfromstates = int(str(subprocess.check_output("grep -n 'OSCISTREN:' " + self.logfile, shell=True)).split(':')[-1].split('\\n')[0])
+            except:
+                self.numfromstates = int(str(subprocess.check_output("grep -n 'OSCISTREN_INITSTATES:' " + self.logfile, shell=True)).split(':')[-1].split('\\n')[0])
 
+          
             self.oscstr = np.zeros((self.numfromstates, self.nstates))
             self.energy = np.zeros((self.numfromstates, self.nstates))
             self.occnum = np.zeros((self.nstates, self.nactive))
