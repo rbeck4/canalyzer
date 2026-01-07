@@ -70,11 +70,10 @@ class Spectra():
             oscstr = os[i]
             if abs(oscstr) < self.thresh:
                 continue
-            if root >= xstart and root <= xend:
-                if lineshape:
-                    line_list.append(lineshape(root, broadening, oscstr, xspace))
-                else:
-                    line_list.append(self.lorentzian(root, broadening, oscstr, xspace))
+            if lineshape:
+                line_list.append(lineshape(root, broadening, oscstr, xspace))
+            else:
+                line_list.append(self.lorentzian(root, broadening, oscstr, xspace))
         spectrum = np.zeros(self.npoints)
         for i in line_list:
             spectrum += i
