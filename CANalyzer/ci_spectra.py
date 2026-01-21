@@ -143,10 +143,9 @@ class CI_spectra(Spectra, MO):
             self.nstates = min(self.ndet, self.nstates)
             #In case of using 2nd order oscistren:
             try:
-                self.numfromstates = int(str(subprocess.check_output("grep -n 'OSCISTREN:' " + self.logfile, shell=True)).split(':')[-1].split('\\n')[0])
-            except:
                 self.numfromstates = int(str(subprocess.check_output("grep -n 'OSCISTREN_INITSTATES:' " + self.logfile, shell=True)).split(':')[-1].split('\\n')[0])
-
+            except:
+                self.numfromstates = int(str(subprocess.check_output("grep -n 'OSCISTREN:' " + self.logfile, shell=True)).split(':')[-1].split('\\n')[0])
           
             self.oscstr = np.zeros((self.numfromstates, self.nstates))
             self.energy = np.zeros((self.numfromstates, self.nstates))
@@ -157,8 +156,9 @@ class CI_spectra(Spectra, MO):
             startline_os = int(grepline.split("'")[1].split(":")[0])
             statecounter = self.numfromstates
             fromstatecounter = 1
-            for x in range(self.nroots*2):
-                #X2 as CQ double spaces them...
+            for x in range(self.nroots*10):
+                #nroots x10 to account for extra printing between ex states
+                #TODO this should be fied
                 parseline = linecache.getline(self.logfile, startline_os)
                 try:
                     #
