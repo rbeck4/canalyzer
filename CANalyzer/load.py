@@ -22,7 +22,7 @@ class Load:
         self.nbe = None
         self.subshell = None
         self.xhf = 'RHF'
-        self.ri = 'Real'
+        self.ri = None
         self.pureD = 0
         self.pureF = 0
         self.ncomp = 1
@@ -90,6 +90,7 @@ class Load:
         # what kind of HF/KS
         overlay3 = self.overlay_route(3)
         set_iops_3 = overlay3.keys()
+        self.ri = 'Real'
         if 116 in set_iops_3:
             iop116 = overlay3[116]
             if iop116 == 1:
@@ -496,11 +497,16 @@ class Load:
                 raise Exception("Invalid reference type detected")
 
         # loading NRI
-        self.ri = str(subprocess.check_output(f"grep 'Reference:   ' {self.logfile}", shell=True)).split()[2]
-        if self.ri == 'Real':
+        self.ri = str(subprocess.check_output(f"grep 'Reference:   ' {self.logfile}", shell=True))
+        if 'Real' in self.ri:
             self.nri = 1
-        elif self.ri == 'Complex':
+            self.ri = 'Real'
+        elif 'Complex' in self.ri:
             self.nri = 2
+            self.ri = 'Complex'
+        elif 'Exact Two Component' in self.ri:
+            self.nri = 2
+            self.ri = 'Complex'
         else:
             while self.ri not in ['Real', 'Complex']:
                 self.ri = input("Is this calculation Real or Complex?   ")
