@@ -134,7 +134,10 @@ class MO(Load):
         if self.xhf in ["UHF", "GHF", "GCAS"]:
             unnorm_pos_beta = np.abs(self.sorted_betapop)
         for i in range(self.nbsuse):
-            renormalization_factor = 1/(np.sum(unnorm_pos_alpha[:,i]) + np.sum(unnorm_pos_beta[:,i]))
+            if self.xhf in ["UHF", "GHF", "GCAS"]:
+                renormalization_factor = 1/(np.sum(unnorm_pos_alpha[:,i]) + np.sum(unnorm_pos_beta[:,i]))
+            else:
+                renormalization_factor = 1/(np.sum(unnorm_pos_alpha[:,i]))
             unnorm_pos_alpha[:,i] = unnorm_pos_alpha[:,i]*renormalization_factor
             if self.xhf in ["UHF", "GHF", "GCAS"]:
                 unnorm_pos_beta[:,i] = unnorm_pos_beta[:,i]*renormalization_factor
