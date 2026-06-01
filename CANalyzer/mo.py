@@ -5,8 +5,9 @@ import CANalyzer.utilities as util
 import sys
 
 class MO(Load):
-    def __init__(self, logfile, fchkfile, filename, groups, displaywidth, separate_ml=False, grouptotal=False, renormalize_negatives=False):
+    def __init__(self, logfile, fchkfile, filename, groups, displaywidth, separate_ml=False, grouptotal=False, renormalize_negatives=False, precision=3):
         super().__init__(logfile, fchkfile, filename, groups, displaywidth)
+        self.precision = 3
         self.moalpha = None
         self.mobeta = None
         self.overlap = None
@@ -164,25 +165,25 @@ class MO(Load):
             header = ('Orbital Energy', '(Hartree)')
         if self.xhf in ['GHF', 'GCAS', 'DHF']:
             results_alpha = dict(zip([header] + self.reduced_groups,
-                                     np.append(self.alpha_orbital_energy.round(5).T,
-                                               (self.sorted_alphapop + self.sorted_betapop).round(3), axis=0)))
+                                     np.append(self.alpha_orbital_energy.round(self.precision).T,
+                                               (self.sorted_alphapop + self.sorted_betapop).round(self.precision), axis=0)))
             remark_alpha = f"\n{self.xhf} Orbitals\n"
-            self.alpha_pop = np.real(self.alpha_pop.round(3))
-            self.beta_pop = np.real(self.beta_pop.round(3))
+            self.alpha_pop = np.real(self.alpha_pop.round(self.precision))
+            self.beta_pop = np.real(self.beta_pop.round(self.precision))
             alpha_spin = [np.sum(self.alpha_pop[:, i]) for i in range(self.nbsuse*self.ncomp)]
             beta_spin = [np.sum(self.beta_pop[:, i]) for i in range(self.nbsuse*self.ncomp)]
             self.spin = dict(zip(['Orbital Energy (Hartree)', 'Alpha', 'Beta'],
-                                 [self.alpha_orbital_energy.flatten().round(5), alpha_spin, beta_spin]))
+                                 [self.alpha_orbital_energy.flatten().round(self.precision), alpha_spin, beta_spin]))
         elif self.xhf in ['RHF', 'ROHF', 'RCAS']:
             results_alpha = dict(zip([header] + self.reduced_groups,
-                                     np.append(self.alpha_orbital_energy.round(5).T,self.sorted_alphapop.round(3), axis=0)))
+                                     np.append(self.alpha_orbital_energy.round(self.precision).T,self.sorted_alphapop.round(self.precision), axis=0)))
             remark_alpha = f"\n{self.xhf} Orbitals\n"
         else:
             results_alpha = dict(zip([header] + self.reduced_groups,
-                                     np.append(self.alpha_orbital_energy.round(5).T,self.sorted_alphapop.round(3), axis=0)))
+                                     np.append(self.alpha_orbital_energy.round(self.precision).T,self.sorted_alphapop.round(self.precision), axis=0)))
             remark_alpha = f"\n{self.xhf} Alpha Orbitals\n"
             results_beta = dict(zip([header] + self.reduced_groups,
-                                    np.append(self.beta_orbital_energy.round(5).T,self.sorted_betapop.round(3), axis=0)))
+                                    np.append(self.beta_orbital_energy.round(self.precision).T,self.sorted_betapop.round(self.precision), axis=0)))
             remark_beta = f"\n{self.xhf} Beta Orbitals\n"
 
         with open(self.filename, 'w') as sys.stdout, pd.option_context('display.max_rows', None, 'display.max_columns', None):
@@ -192,6 +193,7 @@ class MO(Load):
                 print(f'Number of Alpha Electrons: {self.nae}   Beta Electrons: {self.nbe}')
             print(f'Number of AOs: {self.nbasis*self.ncomp}    MOs: {self.nbsuse*self.ncomp}')
             pd.set_option('display.width', self.displaywidth)
+            pd.set_option('display.precision', 8)
             results_alpha_df = pd.DataFrame(results_alpha)
             results_alpha_df.index += 1
             print(remark_alpha)
