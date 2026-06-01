@@ -36,20 +36,8 @@ class Load:
             self.software = 'GDV'
 
         if self.groups:
-            rawgroups = ast.literal_eval(self.groups)
-            rawgroups['undef'] = ''
-            self.groupnames = rawgroups.keys()
-            grouprange = []
-            for key in self.groupnames:
-                rawrange = rawgroups[key]
-                rawrange = rawrange.replace('[', '(')
-                rawrange = rawrange.replace(']', ')')
-                rawrange = rawrange.replace(',', '),(')
-                rawrange = rawrange.replace(':', ',')
-                rawrange = ast.literal_eval(f"[{rawrange}]")
-                grouprange.append(rawrange)
-            self.groups = dict(zip(self.groupnames, grouprange))
-
+            self.groups = util.load_groups(self.groups)
+            self.groupnames = self.groups.keys()
 
     def parse_constants_gdv(self):
         # getting atoms

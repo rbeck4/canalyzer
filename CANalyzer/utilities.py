@@ -1,3 +1,6 @@
+import ast
+import numpy as np
+
 def onlytype(l, type):
     """
     Filters list, keeping only characters that can be converted to said type, and saves it in that type.
@@ -13,6 +16,21 @@ def onlytype(l, type):
             pass
     return new_l
 
+
+def load_groups(groups):
+    rawgroups = ast.literal_eval(groups)
+    rawgroups['undef'] = ''
+    groupnames = rawgroups.keys()
+    grouprange = []
+    for key in groupnames:
+        rawrange = rawgroups[key]
+        rawrange = rawrange.replace('[', '(')
+        rawrange = rawrange.replace(']', ')')
+        rawrange = rawrange.replace(',', '),(')
+        rawrange = rawrange.replace(':', ',')
+        rawrange = ast.literal_eval(f"[{rawrange}]")
+        grouprange.append(rawrange)
+    return dict(zip(groupnames, grouprange))
 
 def write_fchk(startstr, nri, matrix, matsize, oldfchk, fchk):
     import numpy as np

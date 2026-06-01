@@ -77,10 +77,16 @@ class MO(Load):
                     if self.xhf in ['UHF', 'GHF', 'GCAS', 'DHF']:
                         self.sorted_betapop[index, j] += self.beta_pop[i, j]
         else:
+            #Check groups is a dict not a string:
+            if not isinstance(self.groups, dict):
+                self.groups = util.load_groups(self.groups)
+                self.groupnames = self.groups.keys()
+
             self.separate_ml = False
             self.reduced_groups = [(g, l) for g in self.groupnames for l in range(self.maxL + 1)]
             self.sorted_alphapop = np.zeros((len(self.reduced_groups), self.nbsuse*self.ncomp),dtype="complex128")
             self.sorted_betapop = np.zeros((len(self.reduced_groups), self.nbsuse*self.ncomp),dtype="complex128")
+            
             for j in range(self.nbsuse*self.ncomp):
                 for i in range(self.nbasis):
                     atomshellpair = self.subshell[i]

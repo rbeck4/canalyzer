@@ -10,6 +10,7 @@ from CANalyzer.mo import MO
 class TDDFT_spectra(Spectra, MO):
     def __init__(self, logfile, fchkfile, groups, orbital_decomposition=True, separate_ml=False):
         MO.__init__(self, logfile, fchkfile, None, groups, None, separate_ml)
+        MO.start(self)
         Spectra.__init__(self)
         self.categories = None
         # categories of excitations between partitions of orbitals
@@ -30,6 +31,10 @@ class TDDFT_spectra(Spectra, MO):
         self.decomp_byexcat = None
         # nroots x ncat matrix where element (i,j) is the oscillator strength of root i for excitation category j
 
+        self.decomp_byorbital = None
+        # [2,i,j] where [0,i,j] is the leaving contributions, [1,i,j] is arriving for
+        # the tddfft state i per group j oscillator strength contribution.
+
         self.nstates = None
         # number of excited states from TDDFT calculation
 
@@ -42,6 +47,12 @@ class TDDFT_spectra(Spectra, MO):
 
         self.ncat = None
         # number of excitation categories
+        
+        self.nspaces = None
+        # number of excitation categories
+        
+        self.groups = groups
+        #MO decomp groups
 
         self.oscstr = []
         # original osc str
@@ -189,6 +200,27 @@ class TDDFT_spectra(Spectra, MO):
                     if from_mo in from_range and to_mo in to_range:
                         scaled_os = oscstr * contribution
                         self.decomp_byexcat[root, icat] = self.decomp_byexcat[root, icat] + scaled_os
+
+    def decompose_byorbital(self):
+        self.mulliken_analysis()
+        self.spaces = list(self.reduced_groups)
+        self.nspaces = len(self.spaces)
+        
+        leaving  = np.zeros([self.nstates,self.nspaces])
+        arriving = np.zeros([self.nstates,self.nspaces])
+        
+        #Doing the slow way to avoid needing to build the full MO mat. for each 
+        #state:
+        for i in range(self.nstates):
+            for j in range(len(self.orbital_contributions[i])):
+                for k in range(self.nspaces):
+                    leavOrb = self.orbital_contributions[i][j][0]-1
+                    arrvOrb = self.orbital_contributions[i][j][1]-1
+                    orbCont = self.orbital_contributions[i][j][2]
+                    
+                    leaving[i,k]  += self.oscstr[i] * self.sorted_alphapop[k][leavOrb] * orbCont
+                    arriving[i,k] += self.oscstr[i] * self.sorted_alphapop[k][arrvOrb] * orbCont
+        self.decomp_byorbital = np.asarray([leaving * -1, arriving])
 
 
     def plot(self, spectra_names, xstart, xend, plotname=None, vline=None, ifsticks=True, stick_color="black", sticks=None):

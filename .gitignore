@@ -1,0 +1,5 @@
+__pycache__/*
+build/*
+__init__.py
+CANalyzer.egg-info/*
+CANalyzer/__pycache__/*
