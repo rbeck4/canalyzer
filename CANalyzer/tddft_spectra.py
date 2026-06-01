@@ -79,17 +79,21 @@ class TDDFT_spectra(Spectra, MO):
                     self.spin.append(splitline[9].split("=")[1])
                     statecounter += 1
                 elif "->" in parseline and self.orbital_decomposition:
-                    splitline = parseline.split()
+                    splitline = parseline.split('->')
                     from_orbital = int(splitline[0])
-                    to_orbital = int(splitline[2])
-                    contribution = float(splitline[3])
-                    raw_orbital_contributions[current_state - 1].append([from_orbital, to_orbital, contribution])
+                    split2 = splitline[1].split()
+                    to_orbital = int(split2[0])
+                    contribution = float(split2[1])
+                    if contribution > 0.01:
+                        raw_orbital_contributions[current_state - 1].append([from_orbital, to_orbital, contribution])
                 elif '<-' in parseline and self.orbital_decomposition:
-                    splitline = parseline.split()
+                    splitline = parseline.split('<-')
                     from_orbital = int(splitline[0])
-                    to_orbital = int(splitline[2])
-                    contribution = float(splitline[3])
-                    raw_orbital_contributions[current_state - 1].append([from_orbital, to_orbital, contribution])
+                    split2 = splitline[1].split()
+                    to_orbital = int(split2[0])
+                    contribution = float(split2[1])
+                    if contribution > 0.01:
+                        raw_orbital_contributions[current_state - 1].append([from_orbital, to_orbital, contribution])
 
                 if statecounter > self.nstates:
                     if "->" not in parseline and "<-" not in parseline and "Excited State" not in parseline:

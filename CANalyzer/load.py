@@ -487,27 +487,30 @@ class Load:
                 self.xhf = "ROHF"
             elif reftype == 4:
                 self.xhf = "GHF"
+                self.ri == 'Complex'
             elif reftype == 5:
                 self.xhf = "DHF"
                 # we only look at LL block in DHF MO analysis
                 self.ncomp = 2
                 self.nri = 2
+                self.ri == 'Complex'
             else:
                 raise Exception("Invalid reference type detected")
 
         # loading NRI
-        self.ri = str(subprocess.check_output(f"grep 'Reference:   ' {self.logfile}", shell=True)).split()[2]
-        if self.ri == 'Real':
-            self.nri = 1
-        elif self.ri == 'Complex':
-            self.nri = 2
-        else:
-            while self.ri not in ['Real', 'Complex']:
-                self.ri = input("Is this calculation Real or Complex?   ")
-                if self.ri == 'Real':
-                    self.nri = 1
-                elif self.ri == 'Complex':
-                    self.nri = 2
+        if not self.ri:
+          self.ri = str(subprocess.check_output(f"grep 'Reference:   ' {self.logfile}", shell=True)).split()[2]
+          if self.ri == 'Real':
+              self.nri = 1
+          elif self.ri == 'Complex':
+              self.nri = 2
+          else:
+              while self.ri not in ['Real', 'Complex']:
+                  self.ri = input("Is this calculation Real or Complex?   ")
+                  if self.ri == 'Real':
+                      self.nri = 1
+                  elif self.ri == 'Complex':
+                      self.nri = 2
 
         # loading pureD, pureF
         try:
