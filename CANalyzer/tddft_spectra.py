@@ -3,13 +3,14 @@ import subprocess
 import linecache
 from itertools import chain
 import matplotlib.pyplot as plt
+import re
 
 from CANalyzer.spectra import Spectra
 from CANalyzer.mo import MO
 
 class TDDFT_spectra(Spectra, MO):
     def __init__(self, logfile, fchkfile, groups, orbital_decomposition=True, separate_ml=False):
-        MO.__init__(self, logfile, fchkfile, None, groups, None, separate_ml)
+        MO.__init__(self, logfile, fchkfile, None, groups, None, separate_ml, renormalize_negatives=True)
         MO.start(self)
         Spectra.__init__(self)
         self.categories = None
@@ -91,17 +92,17 @@ class TDDFT_spectra(Spectra, MO):
                     statecounter += 1
                 elif "->" in parseline and self.orbital_decomposition:
                     splitline = parseline.split('->')
-                    from_orbital = int(splitline[0])
+                    from_orbital = int(re.sub("[AB]", "", splitline[0]))
                     split2 = splitline[1].split()
-                    to_orbital = int(split2[0])
+                    to_orbital = int(re.sub("[AB]", "", split2[0]))
                     contribution = float(split2[1])
                     if contribution > 0.01:
                         raw_orbital_contributions[current_state - 1].append([from_orbital, to_orbital, contribution])
                 elif '<-' in parseline and self.orbital_decomposition:
                     splitline = parseline.split('<-')
-                    from_orbital = int(splitline[0])
+                    from_orbital = int(re.sub("[AB]", "", splitline[0]))
                     split2 = splitline[1].split()
-                    to_orbital = int(split2[0])
+                    to_orbital = int(re.sub("[AB]", "", split2[0]))
                     contribution = float(split2[1])
                     if contribution > 0.01:
                         raw_orbital_contributions[current_state - 1].append([from_orbital, to_orbital, contribution])
@@ -218,8 +219,11 @@ class TDDFT_spectra(Spectra, MO):
                     arrvOrb = self.orbital_contributions[i][j][1]-1
                     orbCont = self.orbital_contributions[i][j][2]
                     
-                    leaving[i,k]  += self.oscstr[i] * self.sorted_alphapop[k][leavOrb] * orbCont
-                    arriving[i,k] += self.oscstr[i] * self.sorted_alphapop[k][arrvOrb] * orbCont
+                    leaving[i,k]  += self.sorted_alphapop[k][leavOrb] * orbCont
+                    arriving[i,k] += self.sorted_alphapop[k][arrvOrb] * orbCont
+        #for i in range(self.nspaces):
+        #    leaving[i,:]  = leaving[i,:]  / sum(leaving[i,:])
+        #    arriving[i,:] = arriving[i,:] / sum(arriving[i,:])
         self.decomp_byorbital = np.asarray([leaving * -1, arriving])
 
 
