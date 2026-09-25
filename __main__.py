@@ -30,6 +30,7 @@ parser.add_argument('--fchk2', help='Full directory path to fchk file', type=str
 parser.add_argument('--ml', help='True: MOAnalyzer separates based on ml number as well', type=bool)
 parser.add_argument('--grouptotal', help='True: MOAnalyzer returns total AO contribution from group')
 parser.add_argument('--renormalize_negatives', help="Treat negative populations as positive and renormalize total population to 1")
+parser.add_argument("--precision", help='MO decomp, how many digets to print (default=3)', type=int)
 parser.add_argument("--groups", help='Dictionary of custom atom groupings or range of states for NatOrb', type=str)
 """
     groups: MOAnalyzer - Make groups of atoms you want to group together in output. If you have atoms (listed in order)
@@ -63,6 +64,11 @@ if args.grouptotal:
 else:
     grouptotal = False
 
+if args.precision:
+    precision = args.precision
+else:
+    precision = 3
+
 if args.ml:
     ml = True
 else:
@@ -74,7 +80,7 @@ if args.jobtype == "MOANALYZER":
         filename += 'orbitals.txt'
     if not args.ml:
         args.ml = False
-    MOAnalyzer = CANalyzer.mo.MO(args.log, args.fchk, filename, args.groups, displaywidth, ml, grouptotal, args.renormalize_negatives)
+    MOAnalyzer = CANalyzer.mo.MO(args.log, args.fchk, filename, args.groups, displaywidth, ml, grouptotal, args.renormalize_negatives, precision=precision)
     MOAnalyzer.start()
     MOAnalyzer.mulliken_analysis()
     MOAnalyzer.print_mulliken()

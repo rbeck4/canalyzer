@@ -7,7 +7,7 @@ import sys
 class MO(Load):
     def __init__(self, logfile, fchkfile, filename, groups, displaywidth, separate_ml=False, grouptotal=False, renormalize_negatives=False, precision=3):
         super().__init__(logfile, fchkfile, filename, groups, displaywidth)
-        self.precision = 3
+        self.precision = precision
         self.moalpha = None
         self.mobeta = None
         self.overlap = None
